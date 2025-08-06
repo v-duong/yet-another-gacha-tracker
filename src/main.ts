@@ -1,6 +1,6 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import { initializeData } from "./utils/data.utils";
+import { initializeData } from "./utils/gameData.js";
 import { appConfigDir } from "@tauri-apps/api/path";
 // @ts-ignore
 import { setupI18n, loadLocaleMessages } from "./i18n.js"

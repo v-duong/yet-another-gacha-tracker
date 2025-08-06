@@ -1,87 +1,101 @@
 import { appConfigDir } from '@tauri-apps/api/path';
 import { exists, mkdir } from '@tauri-apps/plugin-fs';
 import Database from '@tauri-apps/plugin-sql';
-import { CurrencyValue } from './data.utils';
+import { CurrencyValue } from './gameData';
 
 
 export class TrackerDatabase {
-    db:Database;
+    db: Database;
 
-    constructor(db:Database) {
+    constructor(db: Database) {
         this.db = db;
     }
 
-    getAllDailyRecord = async ( date: number, region: string) => await this.getAllTaskRecordForDay( 'daily', date, region);
-    getAllWeeklyRecord = async ( date: number, region: string) => await this.getAllTaskRecordForDay( 'weekly', date, region);
-    getAllPeriodicRecord = async ( date: number, region: string) => await this.getAllTaskRecordForDay( 'periodic', date, region);
-    getAllOtherRecord = async ( date: number, region: string) => await this.getAllTaskRecordForDay('other', date, region);
+    getAllDailyRecord = async (date: number, region: string) => await this.getAllTaskRecordForDay('daily', date, region);
+    getAllWeeklyRecord = async (date: number, region: string) => await this.getAllTaskRecordForDay('weekly', date, region);
+    getAllPeriodicRecord = async (date: number, region: string) => await this.getAllTaskRecordForDay('periodic', date, region);
+    getAllOtherRecord = async (date: number, region: string) => await this.getAllTaskRecordForDay('other', date, region);
+
+    getAllDailyRecordForRange = async (date_start: number, date_end: number, region: string) => await this.getAllTaskRecordForRange('daily', date_start, date_end, region);
+    getAllWeeklyRecordForRange = async (date_start: number, date_end: number, region: string) => await this.getAllTaskRecordForRange('weekly', date_start, date_end, region);
+    getAllPeriodicRecordForRange = async (date_start: number, date_end: number, region: string) => await this.getAllTaskRecordForRange('periodic', date_start, date_end, region);
+    getAllOtherRecordForRange = async (date_start: number, date_end: number, region: string) => await this.getAllTaskRecordForRange('other', date_start, date_end, region);
 
 
-     async  getAllTaskRecordForRange(taskType: string, date_start: number, date_end:number, region: string){
-    const existingRecord: [...any] = await this.db.select(`SELECT * FROM ${taskType} WHERE date>=${date_start} AND date < ${date_end} AND region='${region}'`);
+    async getAllTaskRecordForRange(taskType: string, date_start: number, date_end: number, region: string) {
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM ${taskType} WHERE date>=${date_start} AND date < ${date_end} AND region='${region}'`);
 
-    if (existingRecord.length > 0)
-        return existingRecord;
-    else
-        return null;
-}
-
-
- async  getTaskRecordForRange( taskType: string, date_start: number, date_end:number, region: string, taskId: string){
-    const existingRecord: [...any] = await this.db.select(`SELECT * FROM ${taskType} WHERE date>=${date_start} AND date < ${date_end} AND region='${region}'  AND name='${taskId}'`);
-
-    if (existingRecord.length > 0)
-        return existingRecord;
-    else
-        return null;
-}
+        if (existingRecord.length > 0)
+            return existingRecord;
+        else
+            return null;
+    }
 
 
- async  getAllTaskRecordForDay( taskType: string, date: number, region: string){
-    const existingRecord: [...any] = await this.db.select(`SELECT * FROM ${taskType} WHERE date=${date} AND region='${region}'`);
+    async getTaskRecordForRange(taskType: string, date_start: number, date_end: number, region: string, taskId: string = '') {
+        let taskFilter = '';
 
-    if (existingRecord.length > 0)
-        return existingRecord;
-    else
-        return null;
-}
+        if (taskId != '')
+            taskFilter = `AND name='${taskId}'`;
 
- async  getTaskRecord( taskType: string, date: number, region: string, taskId: string){
-    const existingRecord: [...any] = await this.db.select(`SELECT * FROM ${taskType} WHERE date=${date} AND region='${region}' AND name='${taskId}'`);
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM ${taskType} WHERE date>=${date_start} AND date < ${date_end} AND region='${region}' ${taskFilter}`);
 
-    if (existingRecord.length > 0)
-        return existingRecord[0];
-    else
-        return null;
-}
+        if (existingRecord.length > 0)
+            return existingRecord;
+        else
+            return null;
+    }
 
- async  insertTaskRecord( taskType: string, date: number, region: string, taskId: string, value: number | boolean, currencies: {}, notes: string) {
-    const existingRecord = await this.getTaskRecord(taskType, date, region, taskId);
 
-    if (existingRecord == null)
-        await this.db.execute(
-            `INSERT into ${taskType}(date, region, name, value, currencies, notes) VALUES($1, $2, $3, $4, $5, $6)`,
-            [date, region, taskId, value, currencies, notes],
-        )
-    else 
-        await this.db.execute(
-            `UPDATE ${taskType} SET value=$1, currencies=$2, notes=$3 WHERE date=${date} AND region='${region}' AND name='${taskId}'`,
-            [value, currencies, notes],
-        )
-}
+    async getAllTaskRecordForDay(taskType: string, date: number, region: string) {
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM ${taskType} WHERE date=${date} AND region='${region}'`);
 
-  async  insertCurrencyHistory( region:string, currencies: {}, notes:string) {
+        if (existingRecord.length > 0)
+            return existingRecord;
+        else
+            return null;
+    }
 
-}
+    async getTaskRecord(taskType: string, date: number, region: string, taskId: string) {
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM ${taskType} WHERE date=${date} AND region='${region}' AND name='${taskId}'`);
+
+        if (existingRecord.length > 0)
+            return existingRecord[0];
+        else
+            return null;
+    }
+
+    async insertTaskRecord(taskType: string, date: number, region: string, taskId: string, value: number | boolean, currencies: {}, notes: string) {
+        const existingRecord = await this.getTaskRecord(taskType, date, region, taskId);
+
+        if (existingRecord == null)
+            await this.db.execute(
+                `INSERT into ${taskType}(date, region, name, value, currencies, notes) VALUES($1, $2, $3, $4, $5, $6)`,
+                [date, region, taskId, value, currencies, notes],
+            )
+        else {
+            if (existingRecord.value == value && existingRecord.notes == notes) {
+                return;
+            }
+            await this.db.execute(
+                `UPDATE ${taskType} SET value=$1, currencies=$2, notes=$3 WHERE date=${date} AND region='${region}' AND name='${taskId}'`,
+                [value, currencies, notes],
+            )
+        }
+    }
+
+    async insertCurrencyHistory(region: string, currencies: {}, notes: string) {
+
+    }
 }
 
 export type TaskRecord = {
-    date:number;
-    region:string;
-    name:string;
-    value:number;
-    currencies:CurrencyValue[];
-    notes:string;
+    date: number;
+    region: string;
+    name: string;
+    value: number;
+    currencies: CurrencyValue[];
+    notes: string;
 }
 
 export async function loadDB(gameTitle: string) {

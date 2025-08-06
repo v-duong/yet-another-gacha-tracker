@@ -1,8 +1,10 @@
 <script setup>
-import { gameData, sessionData, appendGameToString } from '../utils/data.utils';
+import { gameData, appendGameToString } from '../utils/gameData';
+import { sessionData } from '../utils/sessionData';
 import { ref } from "vue";
 
 const isExpanded = ref(false);
+
 
 
 </script>

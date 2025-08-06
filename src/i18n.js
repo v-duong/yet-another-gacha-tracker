@@ -1,6 +1,6 @@
 import { nextTick } from 'vue'
 import { createI18n } from 'vue-i18n'
-import { gameData, gameList } from './utils/data.utils';
+import { gameData, gameList } from './utils/gameData';
 import { resolveResource } from '@tauri-apps/api/path';
 import { exists, readTextFile } from '@tauri-apps/plugin-fs';
 

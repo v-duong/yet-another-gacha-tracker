@@ -1,18 +1,16 @@
 <script setup>
-import { gameData, sessionData } from '../utils/data.utils';
+import { gameData } from '../utils/gameData';
+import { sessionData } from '../utils/sessionData';
 import TaskBox from './TaskBox.vue';
 import SessionSummaryBar from './SessionSummaryBar.vue';
-import { onBeforeUpdate, ref } from 'vue';
+import { onBeforeUpdate, ref, watch } from 'vue';
 import { updateGameView } from '../utils/helpers.utils';
 
 let currentGame = ref(""), currentConfig, currentGameSession= ref("");
 
 await updateCurrent();
 
-onBeforeUpdate(async () => {
-    await updateCurrent();
-});
-
+watch(()=>sessionData.currentGameView, async ()=> await updateCurrent());
 
 async function updateCurrent() {
     currentGame.value = sessionData.currentGameView;
@@ -26,7 +24,7 @@ async function updateCurrent() {
     <div class="main-view-container"
         :style="{ '--accent-color': currentConfig?.accent_color != null ? currentConfig?.accent_color : '', '--accent-font-color': currentConfig?.accent_font_color != null ? currentConfig?.accent_font_color : '' }">
         <div class="top-bar">{{ currentGame }}</div>
-        <div class="task-container" :key="sessionData.currentGameView">
+        <div class="task-container" :key="currentGameSession">
             <TaskBox v-if="currentConfig?.daily != null" id="daily-tasks" :name="'daily'" :data="currentConfig?.daily"
                 :gameName="currentGame" :date="currentGameSession?.lastSelectedDay" :sessionData="currentGameSession" />
             <TaskBox v-if="currentConfig?.weekly != null" id="weekly-tasks" :name="'weekly'"

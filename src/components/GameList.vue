@@ -1,5 +1,6 @@
 <script setup>
-import { gameList, gameData, sessionData } from '../utils/data.utils';
+import { gameList, gameData } from '../utils/gameData';
+import { sessionData } from '../utils/sessionData';
 import { convertFileSrc } from '@tauri-apps/api/core';
 
 </script>
@@ -16,13 +17,14 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 <style lang="css" scoped>
 .game-list-parent {
     background-color: var(--background-color-secondary);
+    width: 20em;
 
     li {
         display: flex;
         flex-direction: row;
         gap: 0.5em;
         align-items: center;
-        padding: 0.5em 2em;
+        padding: 0.5em 1.2em;
 
 
         img {

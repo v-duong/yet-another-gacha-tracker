@@ -1,21 +1,31 @@
 <script setup lang="ts">
 import { watch } from 'vue';
-import { appendGameToString, SteppedRewardEntry } from '../utils/data.utils';
-import { handleDataChange } from '../utils/helpers.utils';
+import { appendGameToString, SteppedRewardEntry } from '../utils/gameData';
+import { dateNumberToDate, dateToDateNumber, getLastWeeklyResetDateNumber, handleDataChange } from '../utils/helpers.utils';
 
 const props = defineProps(['data', 'gameName', 'taskType', 'date', 'sessionData']);
 const stepValue = defineModel({ default: 0 });
 
 let maxSteps = 0;
+let minSteps = 0;
+let cachedValue : number = -4;
 props.data.stepped_rewards?.forEach((entry: SteppedRewardEntry) => {
     if (entry.step > maxSteps) maxSteps = entry.step;
 });
 
 watch(() => props.sessionData, () => {
-    let x = props.sessionData.cachedDays[props.date].getProgress(props.taskType, props.data.id);
-    if (x != null)
+    let x = props.sessionData.cachedDays[props.date]?.getProgress(props.taskType, props.data.id);
+    if (x != null) {
         stepValue.value = x;
-})
+
+        let res = props.sessionData.getHighestProgressForSteppedinRange(props.taskType, props.data.id, getLastWeeklyResetDateNumber(props.gameName, props.date), props.date);
+
+        minSteps = res.highest;
+        stepValue.value = x < minSteps ? minSteps : x;
+    } else {
+        minSteps = 0;
+    }
+}, {immediate:true})
 
 function getTotalFromStepped(stepped_rewards_array: SteppedRewardEntry[]) {
     let resObj: { [key: string]: number } = {};
@@ -45,12 +55,15 @@ function increment() {
 }
 
 function clampStepValueAndUpdate() {
-    if (stepValue.value < 0)
-        stepValue.value = 0;
+    if (stepValue.value < minSteps)
+        stepValue.value = minSteps;
     if (stepValue.value > maxSteps)
         stepValue.value = maxSteps;
 
-    handleDataChange(props.gameName, props.taskType, props.date, props.data, stepValue.value);
+    if (cachedValue != stepValue.value) {
+        handleDataChange(props.gameName, props.taskType, props.date, props.data, stepValue.value);
+        cachedValue = stepValue.value;
+    }
 }
 
 
