@@ -1,0 +1,104 @@
+# - id                            Unique identification name for the game
+#   version                       Configuration version number
+#   order                         [Optional] Order in game list. Conflcits result in alphabetical order. Default: 100
+#   name_key                      [Optional] Name key of game title (Default: game_title)
+#   currencies                    List of trackable currencies
+#   gacha:                        List of gacha systems in the game. Used to estimate pull counts.
+#     - id                        Identifier/name key for the gacha.
+#       pull_currency:            List of currencies used for the given gacha
+#         currency                Name of currency
+#         pull_cost               Cost to pull on the gacha
+#       rate                      Chance of 5-star, SSR, etc. Represented as a decimal value. Example: 0.6% = 0.006
+#       fifty_fifty_system        [Optional] Whether the game uses the fifty-fifty system. Default: False
+#       target_rate               [Optional] Chance of getting the rate-up. Default: 1 (100%)
+#   daily_currency_passes:        [Optional] List of the game's daily currency 
+#     - id                        Identifier/name key for the currency pass.
+#       currency                  Name of currency provided
+#       amount                    Amount per day
+#       duration                  Duration of the pass
+#   regions:                      List of regions and their daily reset times. At least one must be provided.
+#       - region                  Region name
+#         reset_time              Time with format  %H:%M:%S %z"
+#   weekly_reset_day              Day of weekly reset
+#   daily:                        [Optional] List of daily tasks
+#   weekly:                       [Optional] List of weekly tasks. The following are valid for both daily and weekly.
+#       - id:                     Identifier/name key for the task.
+#         reward:                 [Optional] List of rewards associated with the task
+#           - currency            Name of currency to be given
+#             amount              Amount of currency to be given
+#         steps                   [Optional] If given task gives out rewards in multiple steps, this can be used to track it more accurately. This is the maximum steps value. Overrides default rewards if this value exists.
+#         stepped_rewards:        [Optional] List of rewards for tasks with stepped rewards
+#           - step:               Step number that gives the reward
+#             currency            Name of currency to be given
+#             amount              Amount of currency to be given
+#
+
+id: 0
+version: 1
+currencies:
+  - polychrome
+  - monochrome
+  - encrypted_master_tape
+gacha:
+  - id: premium_unit_banner
+    pull_currency:
+      - currency: encrypted_master_tape
+        cost: 1
+      - currency: polychrome
+        cost: 160
+    rate: 0.006
+    fifty_fifty_system: true
+    target_rate: 0.5
+  - id: weapon_banner
+    pull_currency:
+      - currency: encrypted_master_tape
+        cost: 1
+      - currency: polychrome
+        cost: 160
+    rate: 0.006
+    fifty_fifty_system: true
+    target_rate: 0.75
+daily_currency_passes:
+  - id: polychrome_membership
+    currency: polychrome
+    amount: 90
+regions:
+    - region: America
+      reset_time: "4:00:00 -05:00"
+weekly_reset_day: Monday
+daily:
+  - id: daily_tasks
+    reward:
+      - currency: polychrome
+        amount: 60
+weekly:
+  - id: weekly_tasks
+    rewards:
+      - step: 2
+        currency: polychrome
+        amount: 15
+      - step: 4
+        currency: polychrome
+        amount: 15
+      - step: 6
+        currency: polychrome
+        amount: 15
+      - step: 8
+        currency: polychrome
+        amount: 15
+  - id: hollow_zero
+    rewards:
+      - step: 1
+        currency: polychrome
+        amount: 40
+      - step: 2
+        currency: polychrome
+        amount: 40
+      - step: 3
+        currency: polychrome
+        amount: 40
+      - step: 4
+        currency: polychrome
+        amount: 40
+  - id: notorious_hunt
+    steps: 3

@@ -1,0 +1,168 @@
+{
+  "id": "zenless_zone_zero",
+  "version": 1,
+  "accent_color": "rgb(241,129,17)",
+  "accent_font_color": "rgb(15, 15, 15)",
+  "currencies": [
+    {
+      "id": "polychrome",
+      "tracked": true,
+      "primary": true
+    },
+    {
+      "id": "monochrome",
+      "tracked": false
+    },
+    {
+      "id": "encrypted_master_tape",
+      "tracked": false
+    }
+  ],
+  "gacha": [
+    {
+      "id": "premium_unit_banner",
+      "pull_cost": [
+        {
+          "currency": "encrypted_master_tape",
+          "amount": 1
+        },
+        {
+          "currency": "polychrome",
+          "amount": 160
+        }
+      ],
+      "rate": 0.006,
+      "fifty_fifty_system": true,
+      "target_rate": 0.5
+    },
+    {
+      "id": "weapon_banner",
+      "pull_cost": [
+        {
+          "currency": "encrypted_master_tape",
+          "amount": 1
+        },
+        {
+          "currency": "polychrome",
+          "amount": 160
+        }
+      ],
+      "rate": 0.006,
+      "fifty_fifty_system": true,
+      "target_rate": 0.75
+    }
+  ],
+  "daily_currency_passes": [
+    {
+      "id": "daily_polychrome_membership",
+      "currency": "polychrome",
+      "amount": 90
+    }
+  ],
+  "regions": [
+    {
+      "id": "America",
+      "reset_time": "4:00:00 -05:00"
+    }
+  ],
+  "weekly_reset_day": "Monday",
+  "daily": [
+    {
+      "id": "daily_tasks",
+      "rewards": [
+        {
+          "currency": "polychrome",
+          "amount": 60
+        }
+      ]
+    }
+  ],
+  "weekly": [
+    {
+      "id": "weekly_tasks",
+      "stepped_rewards": [
+        {
+          "step": 2,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 15
+            }
+          ]
+        },
+        {
+          "step": 4,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 15
+            }
+          ]
+        },
+        {
+          "step": 6,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 15
+            }
+          ]
+        },
+        {
+          "step": 8,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hollow_zero",
+      "stepped_rewards": [
+        {
+          "step": 1,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 15
+            }
+          ]
+        },
+        {
+          "step": 2,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 15
+            }
+          ]
+        },
+        {
+          "step": 3,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 15
+            }
+          ]
+        },
+        {
+          "step": 4,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "notorious_hunt",
+      "steps": 3
+    }
+  ]
+}

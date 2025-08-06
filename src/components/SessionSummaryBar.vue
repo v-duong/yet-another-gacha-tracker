@@ -1,0 +1,73 @@
+<script setup>
+import { gameData, sessionData, appendGameToString } from '../utils/data.utils';
+import { ref } from "vue";
+
+const isExpanded = ref(false);
+
+
+</script>
+
+<template>
+    <div class="session-summary-bar-container flex-column" :class="{ expanded: isExpanded }">
+        <button @click="isExpanded = !isExpanded">EXPAND</button>
+        <div class="session-summary-information flex-row">
+            <div>SESSION TIME</div>
+            <div>VARIOUS STATS</div>
+            <div class="summary-currency-list flex-column">
+                <template v-for="currency in gameData[sessionData.currentGameView].config.currencies">
+                    <div v-show="currency.primary || isExpanded" class="summary-currency-list-entry flex-row">
+                        <div class="summary-currency-entry-name">{{ $t(appendGameToString(currency.id)) }}</div>
+                        <div class="summary-currency-entry-name"> prev →</div>
+                        <input type="number" class="summary-currency-entry-input" :id="currency.id" />
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</template>
+
+<style lang="css" scoped>
+.session-summary-bar-container {
+    position: absolute;
+    bottom: 0;
+    height: 4em;
+    width: 100%;
+    background-color: var(--accent-color);
+    color: var(--accent-font-color);
+    display: inline-flex;
+    flex-direction: column;
+
+    &.expanded {
+        height: 15em;
+    }
+}
+
+.session-summary-information {
+    justify-content: space-between;
+    align-items: center;
+    align-content: center;
+    padding: 0.2em 2em;
+    flex-grow: 1;
+}
+
+.summary-currency-list {
+    gap: 0.4em;
+    align-items: flex-end;
+}
+
+.summary-currency-list-entry {
+    gap: 1em;
+
+    input {
+        background-color: rgba(0, 0, 0, 0.3);
+        padding: 0.15em;
+        border: none;
+        border-radius: 0.1em;
+        width: 5em;
+
+        &:focus {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+    }
+}
+</style>
