@@ -1,7 +1,7 @@
 <script setup>
 import TaskEntryCheckbox from './TaskEntryCheckbox.vue'
 import TaskEntryStepped from './TaskEntryStepped.vue';
-import { getNextDailyResetTime, getNextWeeklyResetTime } from '../utils/helpers.utils';
+import { getNextDailyResetTime, getNextWeeklyResetTime } from "../utils/date.utils";
 import { ref } from 'vue';
 import Countdown from './Countdown.vue';
 
@@ -19,7 +19,7 @@ else if (props.name == 'weekly')
 <template>
     <div class="task-box">
         <div class="task-box-header flex-row">
-            <p>{{ name }}</p>
+            <p>{{ $t(name) }}</p>
             <Countdown :date="resetTime" :key="resetTime"></Countdown>
         </div>
         <ul>

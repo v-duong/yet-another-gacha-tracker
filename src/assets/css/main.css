@@ -13,6 +13,7 @@
     margin: 0;
     font-size: 16px;
     font-family: 'Arial', sans-serif;
+    scrollbar-color: rgba(255,255,255,0.8) rgba(0,0,0,0.2);
 }
 
 ul, li {
@@ -42,3 +43,4 @@ ul, li {
 .flex-inline {
     display: inline-flex;
 }
+

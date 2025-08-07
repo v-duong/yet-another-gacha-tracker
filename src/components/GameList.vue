@@ -7,9 +7,10 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 
 <template>
     <ul class="game-list-parent">
-        <li v-for="game in gameList.list" @click="{sessionData.currentGameView = game.name; }">
+        <li v-for="game in gameList.list" @click="{ sessionData.currentGameView = game.name; }">
             <img :src=convertFileSrc(gameData[game.name].iconPath)></img>
-            <p>{{ $t(`${game.name}.${ gameData[game.name].config.name_key != null ? gameData[game.name].config.name_key : 'game_title'}`) }}</p>
+            <p>{{ $t(`${game.name}.${gameData[game.name].config.name_key != null ? gameData[game.name].config.name_key
+                : 'game_title'}`) }}</p>
         </li>
     </ul>
 </template>

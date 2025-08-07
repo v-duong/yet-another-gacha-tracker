@@ -1,31 +1,31 @@
 <script setup lang="ts">
 import { watch } from 'vue';
 import { appendGameToString, SteppedRewardEntry } from '../utils/gameData';
-import { dateNumberToDate, dateToDateNumber, getLastWeeklyResetDateNumber, handleDataChange } from '../utils/helpers.utils';
+import { handleTaskRecordChange } from '../utils/helpers.utils';
+import { dateNumberToDate, dateToDateNumber, getLastWeeklyResetDateNumber } from "../utils/date.utils";
 
 const props = defineProps(['data', 'gameName', 'taskType', 'date', 'sessionData']);
 const stepValue = defineModel({ default: 0 });
 
 let maxSteps = 0;
 let minSteps = 0;
-let cachedValue : number = -4;
+let cachedValue: number = -4;
 props.data.stepped_rewards?.forEach((entry: SteppedRewardEntry) => {
     if (entry.step > maxSteps) maxSteps = entry.step;
 });
 
 watch(() => props.sessionData, () => {
     let x = props.sessionData.cachedDays[props.date]?.getProgress(props.taskType, props.data.id);
+    let res = props.sessionData.getHighestProgressForSteppedinRange(props.taskType, props.data.id, getLastWeeklyResetDateNumber(props.gameName, props.date), props.date);
+
     if (x != null) {
         stepValue.value = x;
+    } 
 
-        let res = props.sessionData.getHighestProgressForSteppedinRange(props.taskType, props.data.id, getLastWeeklyResetDateNumber(props.gameName, props.date), props.date);
-
-        minSteps = res.highest;
-        stepValue.value = x < minSteps ? minSteps : x;
-    } else {
-        minSteps = 0;
-    }
-}, {immediate:true})
+    minSteps = res.highest;
+    stepValue.value = stepValue.value < minSteps ? minSteps : stepValue.value;
+    console.log(res)
+}, { immediate: true })
 
 function getTotalFromStepped(stepped_rewards_array: SteppedRewardEntry[]) {
     let resObj: { [key: string]: number } = {};
@@ -61,7 +61,7 @@ function clampStepValueAndUpdate() {
         stepValue.value = maxSteps;
 
     if (cachedValue != stepValue.value) {
-        handleDataChange(props.gameName, props.taskType, props.date, props.data, stepValue.value);
+        handleTaskRecordChange(props.gameName, props.taskType, props.date, props.data, stepValue.value);
         cachedValue = stepValue.value;
     }
 }

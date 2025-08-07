@@ -1,12 +1,10 @@
 <script setup>
 import { gameData, appendGameToString } from '../utils/gameData';
-import { sessionData } from '../utils/sessionData';
 import { ref } from "vue";
 
+const props = defineProps(['data', 'gameName', 'taskType', 'date', 'sessionData']);
+
 const isExpanded = ref(false);
-
-
-
 </script>
 
 <template>
@@ -16,11 +14,11 @@ const isExpanded = ref(false);
             <div>SESSION TIME</div>
             <div>VARIOUS STATS</div>
             <div class="summary-currency-list flex-column">
-                <template v-for="currency in gameData[sessionData.currentGameView].config.currencies">
-                    <div v-show="currency.primary || isExpanded" class="summary-currency-list-entry flex-row">
+                <template v-for="currency in gameData[gameName].config.currencies">
+                    <div v-if="currency.tracked" v-show="currency.primary || isExpanded" class="summary-currency-list-entry flex-row">
                         <div class="summary-currency-entry-name">{{ $t(appendGameToString(currency.id)) }}</div>
-                        <div class="summary-currency-entry-name"> prev →</div>
-                        <input type="number" class="summary-currency-entry-input" :id="currency.id" />
+                        <div class="summary-currency-entry-name"> {{ sessionData.cachedDays[date].getCurrencyInitialValues(currency.id) }} →</div>
+                        <input type="number" class="summary-currency-entry-input" :id="currency.id" :value="sessionData.cachedDays[date].getCurrencyValue(currency.id)" />
                     </div>
                 </template>
             </div>
@@ -38,8 +36,12 @@ const isExpanded = ref(false);
     color: var(--accent-font-color);
     display: inline-flex;
     flex-direction: column;
+    transition: height 0.2s;
+
+    
 
     &.expanded {
+        
         height: 15em;
     }
 }
@@ -50,6 +52,7 @@ const isExpanded = ref(false);
     align-content: center;
     padding: 0.2em 2em;
     flex-grow: 1;
+    overflow-y: auto;
 }
 
 .summary-currency-list {

@@ -3,14 +3,14 @@ import { gameData } from '../utils/gameData';
 import { sessionData } from '../utils/sessionData';
 import TaskBox from './TaskBox.vue';
 import SessionSummaryBar from './SessionSummaryBar.vue';
-import { onBeforeUpdate, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { updateGameView } from '../utils/helpers.utils';
 
-let currentGame = ref(""), currentConfig, currentGameSession= ref("");
+let currentGame = ref(""), currentConfig, currentGameSession = ref("");
 
 await updateCurrent();
 
-watch(()=>sessionData.currentGameView, async ()=> await updateCurrent());
+watch(() => sessionData.currentGameView, async () => await updateCurrent());
 
 async function updateCurrent() {
     currentGame.value = sessionData.currentGameView;
@@ -31,7 +31,7 @@ async function updateCurrent() {
                 :data="currentConfig?.weekly" :gameName="currentGame" :date="currentGameSession?.lastSelectedDay"
                 :sessionData="currentGameSession" />
         </div>
-        <SessionSummaryBar />
+        <SessionSummaryBar :gameName="currentGame" :sessionData="currentGameSession" :date="currentGameSession?.lastSelectedDay" />
     </div>
 
 </template>
@@ -77,6 +77,5 @@ async function updateCurrent() {
     @media screen and (min-width: 1440px) {
         width: calc(100% / 3 - var(--container-gap-value) * 2 - 1px);
     }
-
 }
 </style>

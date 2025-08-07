@@ -11,10 +11,18 @@
     },
     {
       "id": "monochrome",
-      "tracked": false
+      "tracked": true
     },
     {
       "id": "encrypted_master_tape",
+      "tracked": true
+    },
+    {
+      "id": "master_tape",
+      "tracked": false
+    },
+    {
+      "id": "dennies",
       "tracked": false
     }
   ],
