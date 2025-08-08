@@ -12,9 +12,10 @@ import { getNextDailyResetTime } from '../utils/date.utils';
         <li v-for="game in gameList.list" @click="{ sessionData.currentGameView = game.name; }">
             <img :src=convertFileSrc(gameData[game.name].iconPath)></img>
             <div class="game-info-container">
-                <p>{{ $t(`${game.name}.${gameData[game.name].config.name_key != null ? gameData[game.name].config.name_key
+                <p>{{ $t(`${game.name}.${gameData[game.name].config.name_key != null ?
+                    gameData[game.name].config.name_key
                     : 'game_title'}`) }}</p>
-                <Countdown :date="getNextDailyResetTime(game.name)"></Countdown>
+                <Countdown class="list-timer" :date="getNextDailyResetTime(game.name)"></Countdown>
             </div>
         </li>
     </ul>
@@ -47,5 +48,9 @@ import { getNextDailyResetTime } from '../utils/date.utils';
     li:hover {
         background-color: var(--background-color-highlight);
     }
+}
+
+.list-timer {
+    font-size: 0.75em;
 }
 </style>

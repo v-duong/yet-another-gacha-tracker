@@ -61,6 +61,7 @@ export type GameDataEntry = {
   iconPath: string;
   localePath: string;
   db: TrackerDatabase;
+  trackedCurrencies : string[];
 }
 
 export type GameListEntry = {
@@ -74,7 +75,7 @@ export let gameList: { list: GameListEntry[] } = reactive({ list: [] });
 export async function addResourcesFromDir(gameDir: string) {
   const jsonString = await readTextFile(gameDir + "/data.json");
   const data: GameTrackerConfig = JSON.parse(jsonString);
-  gameData[data.id] = { "config": data, iconPath: gameDir + "/images/icon.png", localePath: gameDir + "/i18n", db: new TrackerDatabase(await loadDB(data.id)) };
+  gameData[data.id] = { config: data, iconPath: gameDir + "/images/icon.png", localePath: gameDir + "/i18n", db: new TrackerDatabase(await loadDB(data.id)), trackedCurrencies: [] };
   //console.log(gameData)
 }
 
@@ -85,12 +86,16 @@ export async function generateGameList() {
   for (let gameName in gameData) {
     const game = gameData[gameName];
     tempList.push({ name: game.config.id, order: game.config.order != null ? game.config.order : 100 });
+
+    game.config.currencies.forEach(c => {
+      if (c.tracked)
+        game.trackedCurrencies.push(c.id);
+    })
   }
   tempList = tempList.sort((a, b) => a.name.localeCompare(b.name));
   gameList.list = tempList.sort((a, b) => { return a.order - b.order });
   //console.log(gameList.list);
 }
-
 
 export async function initializeData() {
   const gameDataDirectory = await resolveResource('resources/gamedata');
@@ -99,8 +104,10 @@ export async function initializeData() {
   for await (const entry of entries) {
     if (entry.isDirectory) {
       const gameDir = `${gameDataDirectory}/${entry.name}`;
-      if (await exists(gameDir + "/data.json"))
+      if (await exists(gameDir + "/data.json")) {
         await addResourcesFromDir(gameDir);
+        //load user settings here
+      }
       else
         console.log(`data.json not found in game folder ${entry.name}`)
     }
@@ -111,8 +118,6 @@ export async function initializeData() {
   if (gameList.list.length > 0) {
     const gameName = gameList.list[0].name;
     sessionData.currentGameView = gameName;
-
-
   }
 }
 
@@ -121,3 +126,7 @@ export function appendGameToString(key: string) {
   return `${sessionData.currentGameView}.${key}`
 }
 
+export function getPrimaryCurrency(gameName : string) {
+    let res = gameData[gameName].config.currencies.find(c => c.primary);
+    return res?.id;
+}

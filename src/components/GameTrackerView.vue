@@ -1,11 +1,12 @@
 <script setup>
-import { gameData } from '../utils/gameData';
+import { gameData, getPrimaryCurrency } from '../utils/gameData';
 import { sessionData } from '../utils/sessionData';
 import TaskBox from './TaskBox.vue';
 import SessionSummaryBar from './SessionSummaryBar.vue';
 import { ref, watch } from 'vue';
 import { updateGameView } from '../utils/helpers.utils';
 import DayNav from './DayNav.vue';
+import LineChart from './LineChart.vue';
 
 const currentContext = ref({gameName: "",config: {},sessionData: {},date:""})
 
@@ -35,6 +36,9 @@ async function updateCurrent() {
             <div>{{ $t(currentContext.gameName + '.game_title') }}</div>
             <DayNav :context="currentContext" :updateCallback="async ()=> updateGameView(currentContext.gameName)"></DayNav>
         </div>
+        <div class="chart-parent">
+        <LineChart :context="currentContext" :currency="getPrimaryCurrency(currentContext.gameName)"></LineChart>
+        </div>
         <div class="task-container">
             <TaskBox v-if="currentContext.config?.daily != null" id="daily-tasks" :name="'daily'" :context="currentContext" :data="currentContext.config?.daily" />
             <TaskBox v-if="currentContext.config?.weekly != null" id="weekly-tasks" :name="'weekly'" :context="currentContext" :data="currentContext.config?.weekly" />
@@ -45,6 +49,14 @@ async function updateCurrent() {
 </template>
 
 <style lang="css" scoped>
+.chart-parent {
+    height: 16em;
+    padding: 1em;
+    width: calc(100% - 2em);
+    position: relative;
+    background-color: var(--background-color-secondary);
+}
+
 .main-view-container {
     width: 100%;
     min-height: 100vh;

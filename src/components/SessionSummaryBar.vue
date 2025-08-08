@@ -1,10 +1,12 @@
 <script setup>
 import { gameData, appendGameToString } from '../utils/gameData';
 import { ref } from "vue";
+import { handleCurrencyHistoryChange } from '../utils/helpers.utils';
 
 const props = defineProps(['data', 'context']);
 
 const isExpanded = ref(false);
+
 </script>
 
 <template>
@@ -15,10 +17,17 @@ const isExpanded = ref(false);
             <div>VARIOUS STATS</div>
             <div class="summary-currency-list flex-column">
                 <template v-for="currency in context.config.currencies">
-                    <div v-if="currency.tracked" v-show="currency.primary || isExpanded" class="summary-currency-list-entry flex-row">
+                    <div v-if="currency.tracked" v-show="currency.primary || isExpanded"
+                        class="summary-currency-list-entry flex-row">
                         <div class="summary-currency-entry-name">{{ $t(appendGameToString(currency.id)) }}</div>
-                        <div class="summary-currency-entry-name"> {{ context.sessionData.cachedDays[context.date]?.getCurrencyInitialValues(currency.id) }} →</div>
-                        <input type="number" class="summary-currency-entry-input" :id="currency.id" :value="context.sessionData.cachedDays[context.date]?.getCurrencyValue(currency.id)" />
+                        <div class="summary-currency-entry-name"> {{
+                            context.sessionData.cachedDays[context.date]?.getCurrencyInitialValues(currency.id) }} →
+                        </div>
+                        <input type="number" class="summary-currency-entry-input"
+                            :class="{ overridden: context.sessionData.cachedDays[context.date]?.hasOverride() }"
+                            :id="currency.id"
+                            :value="context.sessionData.cachedDays[context.date]?.getCurrencyValue(currency.id)" 
+                            @change="(e)=>handleCurrencyHistoryChange(context.gameName, context.date, currency.id, Number.parseInt(e.target.value))"/>
                     </div>
                 </template>
             </div>
@@ -38,10 +47,10 @@ const isExpanded = ref(false);
     flex-direction: column;
     transition: height 0.2s;
 
-    
+
 
     &.expanded {
-        
+
         height: 15em;
     }
 }
@@ -64,7 +73,7 @@ const isExpanded = ref(false);
     gap: 1em;
 
     input {
-        background-color: rgba(0, 0, 0, 0.3);
+        background-color: rgba(0, 0, 0, 0.2);
         padding: 0.15em;
         border: none;
         border-radius: 0.1em;

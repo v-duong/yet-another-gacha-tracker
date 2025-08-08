@@ -10,6 +10,7 @@ const props = defineProps(['name', 'context', 'data']);
 let resetTime = ref(0);
 
 function getResetTime() {
+    console.log("test")
     if (props.name == 'daily')
         resetTime.value = getNextDailyResetTime(props.context.gameName);
     else if (props.name == 'weekly')

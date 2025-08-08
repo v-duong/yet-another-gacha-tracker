@@ -2,6 +2,7 @@ import { appConfigDir } from '@tauri-apps/api/path';
 import { exists, mkdir } from '@tauri-apps/plugin-fs';
 import Database from '@tauri-apps/plugin-sql';
 import { CurrencyValue } from './gameData';
+import { DayData } from './sessionData';
 
 
 export class TrackerDatabase {
@@ -87,7 +88,7 @@ export class TrackerDatabase {
     async getCurrencyHistoryForRange(date_start: number, date_end: number, region: string) {
         const existingRecord: [...any] = await this.db.select(`SELECT * FROM currencyHistory WHERE date>=${date_start} AND date < ${date_end} AND region='${region}'`);
 
-        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies);  x.override = JSON.parse(x.override);});
+        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies); x.override = JSON.parse(x.override); });
 
         if (existingRecord.length > 0)
             return existingRecord;
@@ -98,7 +99,7 @@ export class TrackerDatabase {
     async getCurrencyHistory(date: number, region: string) {
         const existingRecord: [...any] = await this.db.select(`SELECT * FROM currencyHistory WHERE date=${date} AND region='${region}'`);
 
-        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies);  x.override = JSON.parse(x.override);});
+        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies); x.override = JSON.parse(x.override); });
 
         if (existingRecord.length > 0)
             return existingRecord;
@@ -109,7 +110,7 @@ export class TrackerDatabase {
     async getLastCurrencyHistory(date: number, region: string) {
         const existingRecord: [...any] = await this.db.select(`SELECT * FROM currencyHistory WHERE date<${date} AND region='${region}' AND (json_array_length(currencies)>0 OR json_array_length(override)>0) ORDER BY date DESC LIMIT 1;`);
 
-        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies);  x.override = JSON.parse(x.override);});
+        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies); x.override = JSON.parse(x.override); });
 
         if (existingRecord.length > 0)
             return existingRecord;
@@ -131,6 +132,16 @@ export class TrackerDatabase {
                 [currencies, override, notes],
             )
         }
+    }
+
+    async updateCurrencyHistoryForRange(dates: number[], targets: any, region: string) {
+        dates.forEach(d => {
+            const target = targets[d];
+            this.db.execute(
+                `UPDATE currencyHistory SET currencies=$1 WHERE date=${d} AND region='${region}'`,
+                [target.totals.calculated],
+            )
+        })
     }
 }
 

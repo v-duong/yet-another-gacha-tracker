@@ -86,7 +86,6 @@ export function parseResetTimeString(resetTimeString: string, d: Date = new Date
         resetTime = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
     }
 
-
     return resetTime;
 }
 

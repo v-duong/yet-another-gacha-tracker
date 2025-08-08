@@ -1,7 +1,8 @@
 import { reactive } from 'vue';
 import { RegionData, gameData, CurrencyValue } from './gameData';
 import { TaskRecord, HistoryRecord, CurrencyHistory } from './db.utils';
-import { getDateNumberWithOffset } from './date.utils';
+import { dateNumberToDate, getCurrentDateForGame, getCurrentDateNumberForGame, getDateNumberWithOffset } from './date.utils';
+import { findCurrencyRecord } from './helpers.utils';
 
 export type SessionCache = {
   cachedGameSession: { [key: string | number]: GameSession; };
@@ -9,7 +10,7 @@ export type SessionCache = {
 };
 
 export class GameSession {
-  cachedDays: DayData[] = []; // key to be represented with YYYYMMDD
+  cachedDays: { [key: number]: DayData } = {}; // key to be represented with YYYYMMDD
   gameName: string;
   lastSelectedDay: number = -1;
   lastSelectedRegion: RegionData = { id: '', reset_time: '00:00:00' };
@@ -56,7 +57,7 @@ export class GameSession {
     const region = this.lastSelectedRegion.id;
     let needsPopulate = false;
 
-    for (let i = date_start; i < date_end; i++) {
+    for (let i = date_start; i < date_end; i = getDateNumberWithOffset(i, 1)) {
       if (this.cachedDays[i] == null) {
         this.cachedDays[i] = new DayData(this.gameName);
         needsPopulate = true;
@@ -91,6 +92,8 @@ export class GameSession {
     this.cachedDays[record.date][firstField][record.name].value = record.value;
     //@ts-ignore
     this.cachedDays[record.date][firstField][record.name].currencies = record.currencies;
+
+    this.cachedDays[record.date].populated = true;
   }
 
   fillHistoryRecord(historyRecords: HistoryRecord[] | null) {
@@ -98,6 +101,8 @@ export class GameSession {
       historyRecords.forEach(record => {
         this.cachedDays[record.date].totals.calculated = record.currencies;
         this.cachedDays[record.date].totals.override = record.override;
+
+        this.cachedDays[record.date].populated = true;
       });
     }
   }
@@ -130,35 +135,107 @@ export class GameSession {
       else i.amount = origin.amount;
     }
 
-    if (selectedDay.totals.override.length == 0) {
-      const prevDate = getDateNumberWithOffset(date, -1);
-      let prevDayData = this.cachedDays[getDateNumberWithOffset(date, -1)];
 
-      if (prevDayData == null)
-        prevDayData = await this.populateSessionData(prevDate);
+    const prevDate = getDateNumberWithOffset(date, -1);
+    let prevDayData = this.cachedDays[getDateNumberWithOffset(date, -1)];
 
-      if (prevDayData.totals.override.length > 0) {
-        prevDayData.totals.override.forEach(x => addToInitial(x));
-      } else if (prevDayData.totals.calculated.length > 0) {
-        prevDayData.totals.calculated.forEach(x => addToInitial(x));
-      } else {
-        const db = gameData[this.gameName].db;
-        const res = await db.getLastCurrencyHistory(date, this.lastSelectedRegion.id);
+    if (prevDayData == null) {
+      prevDayData = await this.populateSessionData(prevDate);
+    }
 
-        if (res == null)
-          return;
+    console.log(date);
 
-        if (res[0].override.length > 0) {
-          res[0].override.forEach((x: CurrencyValue) => addToInitial(x));
-        } else if (res[0].currencies.length > 0) {
-          res[0].override.forEach((x: CurrencyHistory) => addToInitial(x));
-        }
+    if (prevDayData.totals.override.length > 0) {
+      prevDayData.totals.override.forEach(x => addToInitial(x));
+    } else if (prevDayData.populated) {
+      prevDayData.totals.calculated.forEach(x => addToInitial(x));
+    } else {
+      const db = gameData[this.gameName].db;
+      const res = await db.getLastCurrencyHistory(date, this.lastSelectedRegion.id);
+
+      console.log(res)
+
+      if (res == null)
+        return;
+
+      if (res[0].override.length > 0) {
+        res[0].override.forEach((x: CurrencyValue) => addToInitial(x));
+      } else if (res[0].currencies.length > 0) {
+        res[0].currencies.forEach((x: CurrencyHistory) => addToInitial(x));
       }
     }
+
 
     selectedDay.calculateGainFromTasks();
   }
 
+  async adjustCurrentHistoryRetroactive(date: number) {
+    let adjustedRecords: number[] = [];
+    let prevData = this.cachedDays[date];
+
+    let i = getDateNumberWithOffset(date, 1);
+    let currentDate = getCurrentDateNumberForGame(this.lastSelectedRegion.reset_time);
+    while (i <= currentDate) {
+      if (this.cachedDays[i] == null)
+        await this.populateSessionData(i);
+
+      let dataToAdjust = this.cachedDays[i];
+
+      if (dataToAdjust.totals.override.length > 0)
+        return adjustedRecords;
+
+      if (prevData.totals.override.length > 0) {
+        prevData.totals.override.forEach(x => {
+        let d = findCurrencyRecord(dataToAdjust.totals.initial, x.currency);
+        if (d == null) {
+          d = { currency: x.currency, amount: x.amount };
+          dataToAdjust.totals.initial.push(d);
+        } else {
+          d.amount = x.amount;
+        }
+      });
+      } else {
+        prevData.totals.calculated.forEach(x => {
+          let d = findCurrencyRecord(dataToAdjust.totals.initial, x.currency);
+          if (d == null) {
+            d = { currency: x.currency, amount: x.amount };
+            dataToAdjust.totals.initial.push(d);
+          } else {
+            d.amount = x.amount;
+          }
+        });
+      }
+
+      dataToAdjust.calculateGainFromTasks();
+
+      adjustedRecords.push(i);
+
+      i = getDateNumberWithOffset(i, 1);
+      prevData = dataToAdjust;
+    }
+
+    return adjustedRecords;
+  }
+
+  async getCurrencyDataForRange(currency: string, date_start: number, date_end: number) {
+    await this.populateSessionDateRange(date_start, date_end);
+    const data = [];
+    const labels = []
+
+    for (let i = date_start; i <= date_end; i = getDateNumberWithOffset(i, 1)) {
+      let l = dateNumberToDate(i).toISOString().slice(0, 10);
+      labels.push(l);
+      if (!this.cachedDays[i].populated) continue;
+
+      if (this.cachedDays[i].totals.override.length > 0) {
+        data.push([l, findCurrencyRecord(this.cachedDays[i].totals.override, currency)?.amount]);
+      }
+      else if (this.cachedDays[i].totals.calculated.length > 0)
+        data.push([l, findCurrencyRecord(this.cachedDays[i].totals.calculated, currency)?.amount]);
+    }
+
+    return [labels, data];
+  }
 }
 
 export class TrackedProgressData {
@@ -166,13 +243,13 @@ export class TrackedProgressData {
   currencies: CurrencyValue[] = [];
 }
 
-
 export class DayData {
   dailyProgress: { [key: string | number]: TrackedProgressData; } = {};
   weeklyProgress: { [key: string | number]: TrackedProgressData; } = {};
   periodicProgress: { [key: string | number]: TrackedProgressData; } = {};
   otherSources: { [key: string | number]: OtherEntry; } = {};
   totals: { initial: CurrencyValue[], calculated: CurrencyHistory[], override: CurrencyValue[] } = { initial: [], calculated: [], override: [] };
+  populated: boolean = false;
 
   constructor(gameName: string) {
     gameData[gameName].config.currencies.forEach(currency => {
@@ -221,29 +298,13 @@ export class DayData {
     progressType[name].value = value as number;
     progressType[name].currencies = currencies;
 
+    this.populated = true;
     this.calculateGainFromTasks();
   }
 
   getCurrencyInitialValues(currency: string) {
-    let r = this.totals.initial.find(x => x.currency == currency);
+    let r = findCurrencyRecord(this.totals.initial, currency);
     return r ? r.amount : 0;
-  }
-
-  getCurrency(currency: string) {
-    let res = this.totals.override.find(x => x.currency == currency);
-
-    if (res != null)
-      return res.amount;
-
-    let netValue = 0;
-    this.totals.calculated.forEach(x => {
-      if (x.currency == currency)
-        netValue += x.gain - x.loss;
-    })
-
-    let initial = this.totals.initial.find(x => x.currency == currency);
-
-    return (initial ? initial.amount : 0) + netValue;
   }
 
   getCurrencyValue(currency: string) {
@@ -257,7 +318,9 @@ export class DayData {
   }
 
   calculateGainFromTasks() {
-    this.totals.calculated.forEach(x => { x.amount = this.getCurrencyInitialValues(x.currency); x.gain = 0; })
+    this.totals.calculated.forEach(x => {
+      x.amount = this.getCurrencyInitialValues(x.currency); x.gain = 0;
+    })
 
     const addTaskToTotals = (taskCurrencies: CurrencyValue[]) => {
       taskCurrencies.forEach(x => {
@@ -269,7 +332,6 @@ export class DayData {
     };
 
     for (let key in this.dailyProgress) {
-      console.log(this.dailyProgress[key]);
       addTaskToTotals(this.dailyProgress[key].currencies);
     }
 
@@ -280,6 +342,10 @@ export class DayData {
     for (let key in this.periodicProgress) {
       addTaskToTotals(this.periodicProgress[key].currencies);
     }
+  }
+
+  hasOverride() {
+    return this.totals.override?.length > 0;
   }
 }
 
