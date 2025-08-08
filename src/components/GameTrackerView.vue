@@ -5,33 +5,41 @@ import TaskBox from './TaskBox.vue';
 import SessionSummaryBar from './SessionSummaryBar.vue';
 import { ref, watch } from 'vue';
 import { updateGameView } from '../utils/helpers.utils';
+import DayNav from './DayNav.vue';
 
-let currentGame = ref(""), currentConfig, currentGameSession = ref("");
+const currentContext = ref({gameName: "",config: {},sessionData: {},date:""})
 
 await updateCurrent();
 
 watch(() => sessionData.currentGameView, async () => await updateCurrent());
 
 async function updateCurrent() {
-    currentGame.value = sessionData.currentGameView;
-    currentConfig = gameData[currentGame.value]?.config;
-    await updateGameView(currentGame.value);
-    currentGameSession.value = sessionData.cachedGameSession[currentGame.value];
+    const c = currentContext.value;
+    c.gameName = sessionData.currentGameView;
+    c.config = gameData[c.gameName]?.config;
+
+    await updateGameView(c.gameName);
+
+    c.sessionData = sessionData.cachedGameSession[c.gameName];
+    c.date = c.sessionData.lastSelectedDay;
 }
+
+
+
 </script>
 
 <template>
     <div class="main-view-container"
-        :style="{ '--accent-color': currentConfig?.accent_color != null ? currentConfig?.accent_color : '', '--accent-font-color': currentConfig?.accent_font_color != null ? currentConfig?.accent_font_color : '' }">
-        <div class="top-bar">{{ currentGame }}</div>
-        <div class="task-container" :key="currentGameSession">
-            <TaskBox v-if="currentConfig?.daily != null" id="daily-tasks" :name="'daily'" :data="currentConfig?.daily"
-                :gameName="currentGame" :date="currentGameSession?.lastSelectedDay" :sessionData="currentGameSession" />
-            <TaskBox v-if="currentConfig?.weekly != null" id="weekly-tasks" :name="'weekly'"
-                :data="currentConfig?.weekly" :gameName="currentGame" :date="currentGameSession?.lastSelectedDay"
-                :sessionData="currentGameSession" />
+        :style="{ '--accent-color': currentContext.config?.accent_color != null ? currentContext.config?.accent_color : '', '--accent-font-color': currentContext.config?.accent_font_color != null ? currentContext.config?.accent_font_color : '' }">
+        <div class="top-bar flex-row">
+            <div>{{ $t(currentContext.gameName + '.game_title') }}</div>
+            <DayNav :context="currentContext" :updateCallback="async ()=> updateGameView(currentContext.gameName)"></DayNav>
         </div>
-        <SessionSummaryBar :gameName="currentGame" :sessionData="currentGameSession" :date="currentGameSession?.lastSelectedDay" />
+        <div class="task-container">
+            <TaskBox v-if="currentContext.config?.daily != null" id="daily-tasks" :name="'daily'" :context="currentContext" :data="currentContext.config?.daily" />
+            <TaskBox v-if="currentContext.config?.weekly != null" id="weekly-tasks" :name="'weekly'" :context="currentContext" :data="currentContext.config?.weekly" />
+        </div>
+        <SessionSummaryBar :context="currentContext" />
     </div>
 
 </template>
@@ -49,7 +57,8 @@ async function updateCurrent() {
     color: var(--accent-font-color);
     width: 100%;
     height: 4em;
-    display: block;
+    align-items: center;
+    justify-content: space-around;
 }
 
 .task-container {

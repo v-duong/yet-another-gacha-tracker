@@ -2,6 +2,8 @@
 import { gameList, gameData } from '../utils/gameData';
 import { sessionData } from '../utils/sessionData';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import Countdown from './Countdown.vue';
+import { getNextDailyResetTime } from '../utils/date.utils';
 
 </script>
 
@@ -9,8 +11,11 @@ import { convertFileSrc } from '@tauri-apps/api/core';
     <ul class="game-list-parent">
         <li v-for="game in gameList.list" @click="{ sessionData.currentGameView = game.name; }">
             <img :src=convertFileSrc(gameData[game.name].iconPath)></img>
-            <p>{{ $t(`${game.name}.${gameData[game.name].config.name_key != null ? gameData[game.name].config.name_key
-                : 'game_title'}`) }}</p>
+            <div class="game-info-container">
+                <p>{{ $t(`${game.name}.${gameData[game.name].config.name_key != null ? gameData[game.name].config.name_key
+                    : 'game_title'}`) }}</p>
+                <Countdown :date="getNextDailyResetTime(game.name)"></Countdown>
+            </div>
         </li>
     </ul>
 </template>

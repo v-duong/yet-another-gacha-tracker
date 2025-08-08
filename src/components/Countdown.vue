@@ -1,12 +1,15 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { format, millisecondsToHours, millisecondsToMinutes, millisecondsToSeconds } from 'date-fns';
 
 const props = defineProps(['date']);
 
 let countdown = ref("");
+let currentTimeout = 0;
 
 const getCountdownString = () => {
+    if (props.date == null)
+        return ''
     let interval = props.date - new Date(); 
     let hours = millisecondsToHours(interval);
     let minutes = millisecondsToMinutes(interval) % 60;
@@ -18,7 +21,7 @@ tick();
 
 function tick() {
     countdown.value = getCountdownString();
-    setTimeout(tick, 1000);
+    currentTimeout = setTimeout(tick, 900);
 }
 
 </script>

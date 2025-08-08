@@ -2,7 +2,7 @@
 import { gameData, appendGameToString } from '../utils/gameData';
 import { ref } from "vue";
 
-const props = defineProps(['data', 'gameName', 'taskType', 'date', 'sessionData']);
+const props = defineProps(['data', 'context']);
 
 const isExpanded = ref(false);
 </script>
@@ -14,11 +14,11 @@ const isExpanded = ref(false);
             <div>SESSION TIME</div>
             <div>VARIOUS STATS</div>
             <div class="summary-currency-list flex-column">
-                <template v-for="currency in gameData[gameName].config.currencies">
+                <template v-for="currency in context.config.currencies">
                     <div v-if="currency.tracked" v-show="currency.primary || isExpanded" class="summary-currency-list-entry flex-row">
                         <div class="summary-currency-entry-name">{{ $t(appendGameToString(currency.id)) }}</div>
-                        <div class="summary-currency-entry-name"> {{ sessionData.cachedDays[date].getCurrencyInitialValues(currency.id) }} →</div>
-                        <input type="number" class="summary-currency-entry-input" :id="currency.id" :value="sessionData.cachedDays[date].getCurrencyValue(currency.id)" />
+                        <div class="summary-currency-entry-name"> {{ context.sessionData.cachedDays[context.date]?.getCurrencyInitialValues(currency.id) }} →</div>
+                        <input type="number" class="summary-currency-entry-input" :id="currency.id" :value="context.sessionData.cachedDays[context.date]?.getCurrencyValue(currency.id)" />
                     </div>
                 </template>
             </div>

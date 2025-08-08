@@ -16,10 +16,10 @@ export class TrackerDatabase {
     getAllPeriodicRecord = async (date: number, region: string) => await this.getAllTaskRecordForDay('periodic', date, region);
     getAllOtherRecord = async (date: number, region: string) => await this.getAllTaskRecordForDay('other', date, region);
 
-    getAllDailyRecordForRange = async (date_start: number, date_end: number, region: string) =>  this.getAllTaskRecordForRange('daily', date_start, date_end, region);
-    getAllWeeklyRecordForRange = async (date_start: number, date_end: number, region: string) =>  this.getAllTaskRecordForRange('weekly', date_start, date_end, region);
-    getAllPeriodicRecordForRange = async (date_start: number, date_end: number, region: string) =>  this.getAllTaskRecordForRange('periodic', date_start, date_end, region);
-    getAllOtherRecordForRange = async (date_start: number, date_end: number, region: string) =>  this.getAllTaskRecordForRange('other', date_start, date_end, region);
+    getAllDailyRecordForRange = async (date_start: number, date_end: number, region: string) => this.getAllTaskRecordForRange('daily', date_start, date_end, region);
+    getAllWeeklyRecordForRange = async (date_start: number, date_end: number, region: string) => this.getAllTaskRecordForRange('weekly', date_start, date_end, region);
+    getAllPeriodicRecordForRange = async (date_start: number, date_end: number, region: string) => this.getAllTaskRecordForRange('periodic', date_start, date_end, region);
+    getAllOtherRecordForRange = async (date_start: number, date_end: number, region: string) => this.getAllTaskRecordForRange('other', date_start, date_end, region);
 
     getAllTaskRecordForRange = async (taskType: string, date_start: number, date_end: number, region: string) => this.getTaskRecordForRange(taskType, date_start, date_end, region);
 
@@ -82,12 +82,12 @@ export class TrackerDatabase {
         }
     }
 
-//SELECT * from daily, json_each(currencies) WHERE json_extract(json_each.value,'$.currency') IS 'polychrome';
+    //SELECT * from daily, json_each(currencies) WHERE json_extract(json_each.value,'$.currency') IS 'polychrome';
 
-    async getCurrencyHistoryForRange(date_start:number,date_end:number, region: string) {
+    async getCurrencyHistoryForRange(date_start: number, date_end: number, region: string) {
         const existingRecord: [...any] = await this.db.select(`SELECT * FROM currencyHistory WHERE date>=${date_start} AND date < ${date_end} AND region='${region}'`);
 
-        existingRecord.forEach(x => x.currencies = JSON.parse(x.currencies));
+        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies);  x.override = JSON.parse(x.override);});
 
         if (existingRecord.length > 0)
             return existingRecord;
@@ -95,10 +95,10 @@ export class TrackerDatabase {
             return null;
     }
 
-    async getCurrencyHistory(date:number, region: string){
+    async getCurrencyHistory(date: number, region: string) {
         const existingRecord: [...any] = await this.db.select(`SELECT * FROM currencyHistory WHERE date=${date} AND region='${region}'`);
 
-        existingRecord.forEach(x => x.currencies = JSON.parse(x.currencies));
+        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies);  x.override = JSON.parse(x.override);});
 
         if (existingRecord.length > 0)
             return existingRecord;
@@ -106,10 +106,10 @@ export class TrackerDatabase {
             return null;
     }
 
-    async getLastCurrencyHistory(date: number, region:string) {
+    async getLastCurrencyHistory(date: number, region: string) {
         const existingRecord: [...any] = await this.db.select(`SELECT * FROM currencyHistory WHERE date<${date} AND region='${region}' AND (json_array_length(currencies)>0 OR json_array_length(override)>0) ORDER BY date DESC LIMIT 1;`);
 
-        existingRecord.forEach(x => x.currencies = JSON.parse(x.currencies));
+        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies);  x.override = JSON.parse(x.override);});
 
         if (existingRecord.length > 0)
             return existingRecord;
@@ -117,12 +117,12 @@ export class TrackerDatabase {
             return null;
     }
 
-    async insertCurrencyHistory(date:number, region: string, currencies: [], override:[], notes: string) {
+    async insertCurrencyHistory(date: number, region: string, currencies: CurrencyHistory[], override: CurrencyValue[], notes: string) {
         const existingRecord = await this.getCurrencyHistory(date, region);
-        
+
         if (existingRecord == null)
             await this.db.execute(
-                `INSERT into currencyHistory(date, region, currencies, override, notes) VALUES($1, $2, $3, $4)`,
+                `INSERT into currencyHistory(date, region, currencies, override, notes) VALUES($1, $2, $3, $4, $5)`,
                 [date, region, currencies, override, notes],
             )
         else {

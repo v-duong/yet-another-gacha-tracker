@@ -5,7 +5,7 @@ import { sessionData } from "./sessionData";
 
 export function getNextDailyResetTime(gameName: string) {
     let resetTimeString = "00:00:00";
-    let regionData = sessionData.cachedGameSession[gameName].lastSelectedRegion;
+    let regionData = sessionData.cachedGameSession[gameName]?.lastSelectedRegion;
 
     if (regionData == null)
         console.log("region data not found");
@@ -23,7 +23,7 @@ export function getNextDailyResetTime(gameName: string) {
 
 export function getNextWeeklyResetTime(gameName: string, fromDate: Date = new Date()) {
     let resetTimeString = "00:00:00";
-    let regionData = sessionData.cachedGameSession[gameName].lastSelectedRegion;
+    let regionData = sessionData.cachedGameSession[gameName]?.lastSelectedRegion;
 
     if (regionData == null)
         console.log("region data not found");

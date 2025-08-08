@@ -2,17 +2,21 @@
 import TaskEntryCheckbox from './TaskEntryCheckbox.vue'
 import TaskEntryStepped from './TaskEntryStepped.vue';
 import { getNextDailyResetTime, getNextWeeklyResetTime } from "../utils/date.utils";
-import { ref } from 'vue';
+import { onUpdated, ref, watch } from 'vue';
 import Countdown from './Countdown.vue';
 
-const props = defineProps(['name','data','gameName', 'date', 'sessionData']);
+const props = defineProps(['name', 'context', 'data']);
 
 let resetTime = ref(0);
 
-if (props.name == 'daily')
-    resetTime.value = getNextDailyResetTime(props.gameName);
-else if (props.name == 'weekly')
-    resetTime.value = getNextWeeklyResetTime(props.gameName);
+function getResetTime() {
+    if (props.name == 'daily')
+        resetTime.value = getNextDailyResetTime(props.context.gameName);
+    else if (props.name == 'weekly')
+        resetTime.value = getNextWeeklyResetTime(props.context.gameName);
+}
+
+watch(() => props.context.sessionData, () => getResetTime(), { immediate: "yes" });
 
 </script>
 
@@ -24,8 +28,10 @@ else if (props.name == 'weekly')
         </div>
         <ul>
             <li class="task-list-item" v-for="taskItem in data">
-                <TaskEntryCheckbox v-if="taskItem.rewards != null" :data="taskItem" :taskType="name" :gameName="props.gameName" :date="props.date" :sessionData="props.sessionData"></TaskEntryCheckbox>
-                <TaskEntryStepped v-else-if="taskItem.stepped_rewards != null" :data="taskItem" :taskType="name" :gameName="props.gameName" :date="props.date" :sessionData="props.sessionData"></TaskEntryStepped>
+                <TaskEntryCheckbox v-if="taskItem.rewards != null" :data="taskItem" :taskType="name" :context="context">
+                </TaskEntryCheckbox>
+                <TaskEntryStepped v-else-if="taskItem.stepped_rewards != null" :data="taskItem" :taskType="name"
+                    :context="context"></TaskEntryStepped>
             </li>
         </ul>
     </div>

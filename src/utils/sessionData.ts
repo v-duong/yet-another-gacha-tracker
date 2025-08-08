@@ -24,7 +24,7 @@ export class GameSession {
     if (this.cachedDays[date] == null)
       this.cachedDays[date] = new DayData(this.gameName);
     else
-      return;
+      return this.cachedDays[date];
 
     const db = gameData[this.gameName].db;
     const region = this.lastSelectedRegion.id;
@@ -47,6 +47,8 @@ export class GameSession {
     });
 
     this.fillHistoryRecord(historyRecord);
+
+    return selectedDay;
   }
 
   async populateSessionDateRange(date_start: number, date_end: number) {
@@ -128,12 +130,12 @@ export class GameSession {
       else i.amount = origin.amount;
     }
 
-    if (selectedDay.totals.override.length == 0 && selectedDay.totals.initial.length == 0) {
+    if (selectedDay.totals.override.length == 0) {
       const prevDate = getDateNumberWithOffset(date, -1);
-      const prevDayData = this.cachedDays[getDateNumberWithOffset(date, -1)];
+      let prevDayData = this.cachedDays[getDateNumberWithOffset(date, -1)];
 
       if (prevDayData == null)
-        this.populateSessionData(prevDate);
+        prevDayData = await this.populateSessionData(prevDate);
 
       if (prevDayData.totals.override.length > 0) {
         prevDayData.totals.override.forEach(x => addToInitial(x));
@@ -164,6 +166,7 @@ export class TrackedProgressData {
   currencies: CurrencyValue[] = [];
 }
 
+
 export class DayData {
   dailyProgress: { [key: string | number]: TrackedProgressData; } = {};
   weeklyProgress: { [key: string | number]: TrackedProgressData; } = {};
@@ -178,23 +181,6 @@ export class DayData {
         this.totals.initial.push({ currency: currency.id, amount: 0 });
       }
     })
-  }
-
-  getCurrency(currency: string) {
-    let res = this.totals.override.find(x => x.currency == currency);
-
-    if (res != null)
-      return res.amount;
-
-    let netValue = 0;
-    this.totals.calculated.forEach(x => {
-      if (x.currency == currency)
-        netValue += x.gain - x.loss;
-    })
-
-    let initial = this.totals.initial.find(x => x.currency == currency);
-
-    return (initial ? initial.amount : 0) + netValue;
   }
 
   getProgress(taskType: string, name: string) {
@@ -243,6 +229,23 @@ export class DayData {
     return r ? r.amount : 0;
   }
 
+  getCurrency(currency: string) {
+    let res = this.totals.override.find(x => x.currency == currency);
+
+    if (res != null)
+      return res.amount;
+
+    let netValue = 0;
+    this.totals.calculated.forEach(x => {
+      if (x.currency == currency)
+        netValue += x.gain - x.loss;
+    })
+
+    let initial = this.totals.initial.find(x => x.currency == currency);
+
+    return (initial ? initial.amount : 0) + netValue;
+  }
+
   getCurrencyValue(currency: string) {
     let r = this.totals.override.find(x => x.currency == currency);
     if (r) return r.amount;
@@ -266,6 +269,7 @@ export class DayData {
     };
 
     for (let key in this.dailyProgress) {
+      console.log(this.dailyProgress[key]);
       addTaskToTotals(this.dailyProgress[key].currencies);
     }
 
@@ -276,8 +280,6 @@ export class DayData {
     for (let key in this.periodicProgress) {
       addTaskToTotals(this.periodicProgress[key].currencies);
     }
-
-    console.log(this.totals.calculated)
   }
 }
 

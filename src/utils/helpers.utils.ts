@@ -1,20 +1,21 @@
 import { CurrencyValue, gameData, TrackedTask } from "./gameData";
 import { sessionData, GameSession } from './sessionData';
 import { TrackerDatabase } from "./db.utils";
-import { getLastWeeklyResetDateNumber, getCurrentDateNumberForGame, dateToDateNumber, getLastWeeklyResetTime, getNextWeeklyResetTime } from "./date.utils";
+import { getLastWeeklyResetDateNumber, getCurrentDateNumberForGame, dateToDateNumber, getLastWeeklyResetTime, getNextWeeklyResetTime, getDateNumberWithOffset } from "./date.utils";
 
 const timerArray: { [key: string]: number } = {};
 
 
 export async function handleTaskRecordChange(gameName: string, taskType: string, date: number, data: TrackedTask, value: number) {
     let currencies: CurrencyValue[] = [];
+    const session = sessionData.cachedGameSession[gameName];
 
     if (data.stepped_rewards != null && value > 0) {
         let compareValue = 0;
 
         if (taskType == 'weekly') {
             let lastWeekly = getLastWeeklyResetDateNumber(gameName, date);
-            compareValue = sessionData.cachedGameSession[gameName].getHighestProgressForSteppedinRange(taskType, data.id, lastWeekly, date).highest;
+            compareValue = session.getHighestProgressForSteppedinRange(taskType, data.id, lastWeekly, date).highest;
         }
 
         data.stepped_rewards.forEach(x => {
@@ -35,10 +36,11 @@ export async function handleTaskRecordChange(gameName: string, taskType: string,
         })
     }
 
-    sessionData.cachedGameSession[gameName].cachedDays[date].setProgress(taskType, data.id, value, currencies);
+    session.cachedDays[date].setProgress(taskType, data.id, value, currencies);
 
     debounce(data.id, () => {
-        gameData[gameName].db.insertTaskRecord(taskType, date, sessionData.cachedGameSession[gameName].lastSelectedRegion.id, data.id, value, currencies, "");
+        gameData[gameName].db.insertTaskRecord(taskType, date, session.lastSelectedRegion.id, data.id, value, currencies, "");
+        gameData[gameName].db.insertCurrencyHistory(date, session.lastSelectedRegion.id, session.cachedDays[date].totals.calculated, session.cachedDays[date].totals.override, "");
     });
 
     return currencies;
@@ -59,14 +61,15 @@ export async function updateGameView(gameName: string) {
         sessionData.cachedGameSession[gameName] = new GameSession(gameName, date, regionData);
     }
 
+    console.log('te');
+
     let date = sessionData.cachedGameSession[gameName].lastSelectedDay;
 
-    const lastWeekly = dateToDateNumber(getLastWeeklyResetTime(gameName));
-    const nextWeekly = dateToDateNumber(getNextWeeklyResetTime(gameName));
+    const lastWeekly = getLastWeeklyResetDateNumber(gameName, date);
+    const nextWeekly = getDateNumberWithOffset(date,7);
 
     await sessionData.cachedGameSession[gameName].populateSessionDateRange(lastWeekly, nextWeekly);
 
     // get most recent total currency values
     await sessionData.cachedGameSession[gameName].populateInitialCurrencyValue(date);
-
 }
