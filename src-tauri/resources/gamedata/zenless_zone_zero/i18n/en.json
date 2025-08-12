@@ -2,6 +2,20 @@
   "game_title": "Zenless Zone Zero",
   "polychrome": "Polychrome",
   "monochrome": "Monochrome",
+  "encrypted_master_tape": "Encrypted Master Tape",
   "daily_polychrome_membership": "Inter-Knot Membership",
-  "daily_tasks": "Daily Tasks"
+  "daily_tasks": "Daily Tasks",
+  "weekly_tasks": "Weekly Tasks",
+  "hollow_zero": "Hollow Zero",
+  "shiyu_defense": "Shiyu Defense",
+  "shiyu_defense_1": "Frontier 1",
+  "shiyu_defense_2": "Frontier 2",
+  "shiyu_defense_3": "Frontier 3",
+  "shiyu_defense_4": "Frontier 4",
+  "shiyu_defense_5": "Frontier 5",
+  "shiyu_defense_6": "Frontier 6",
+  "shiyu_defense_7": "Frontier 7",
+  "b_rank": "B Rank",
+  "a_rank": "A Rank",
+  "s_rank": "S Rank"
 }

@@ -94,11 +94,13 @@ async function updateCurrent() {
     }
 
     @media screen and (min-width: 1050px) {
-        width: calc(100% / 2 - var(--container-gap-value) - 1px);
+        min-width: calc(100% / 2 - var(--container-gap-value) - 2px);
+        width: min-content
     }
 
     @media screen and (min-width: 1440px) {
-        width: calc(100% / 3 - var(--container-gap-value) * 2 - 1px);
+        min-width: calc(100% / 3 - var(--container-gap-value) * 2 - 1px);
+        width: min-content;
     }
 }
 </style>

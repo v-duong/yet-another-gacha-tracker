@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue';
 import { appendGameToString, SteppedRewardEntry } from '../utils/gameData';
 import { handleTaskRecordChange } from '../utils/helpers.utils';
-import { dateNumberToDate, getLastWeeklyResetDateNumber } from "../utils/date.utils";
+import { dateNumberToDate, getLastPeriodicResetDateNumber, getLastWeeklyResetDateNumber } from "../utils/date.utils";
 import './style/TaskEntry.css'
 
 const props = defineProps(['data', 'taskType', 'context']);
@@ -20,7 +20,14 @@ props.data.stepped_rewards?.forEach((entry: SteppedRewardEntry) => {
 
 watch(() => [props.context.date, props.context.sessionData], () => {
     let x = props.context.sessionData.cachedDays[props.context.date]?.getProgress(props.taskType, props.data.id);
-    let resetDay = getLastWeeklyResetDateNumber(props.context.gameName, props.context.date);
+    let resetDay = 0;
+
+    if (props.taskType == 'weekly')
+        resetDay = getLastWeeklyResetDateNumber(props.context.gameName, props.context.date);
+    else if (props.taskType == 'periodic' && "reset_day" in props.data)
+        resetDay = getLastPeriodicResetDateNumber(props.data.reset_day, props.context.date, props.data.reset_period);
+    else
+        return;
 
     let res = props.context.sessionData.getHighestProgressForTaskinRange(props.taskType, props.data.id, resetDay, props.context.date);
 
@@ -88,20 +95,20 @@ function clampStepValueAndUpdate() {
                 <div>/ {{ maxSteps }}</div>
                 <button @click="increment">+</button>
             </div>
-            <p>{{ data.id }}</p>
+            <p>{{ $t(appendGameToString(data.id)) }}</p>
             <div class="rewards-list">
                 <div class="reward-list-item">
                     <div v-for="(value, currency) in getTotalFromStepped(data.stepped_rewards)">
                         {{ value }} {{
-                            // @ts-ignore
                             $t(appendGameToString(currency))
                         }}</div>
                 </div>
             </div>
         </div>
-        <div v-show="lastRecords.highestDate != 0"> Previous record: {{ lastRecords.highest }} on {{ dateNumberToDate(lastRecords.highestDate).toISOString().slice(0,10) }}</div>
+        <div v-show="lastRecords.highestDate != 0"> Previous record: {{ lastRecords.highest }} on {{
+            dateNumberToDate(lastRecords.highestDate).toISOString().slice(0,10) }}</div>
     </div>
-    
+
 </template>
 
 <style lang="css" scoped>

@@ -2,7 +2,7 @@
 import TaskEntryCheckbox from './TaskEntryCheckbox.vue'
 import TaskEntryStepped from './TaskEntryStepped.vue';
 import TaskEntryRankedStages from './TaskEntryRankedStages.vue';
-import { getNextDailyResetTime, getNextWeeklyResetTime } from "../utils/date.utils";
+import { getCurrentDateNumberForGame, getNextDailyResetTime, getNextWeeklyResetTime } from "../utils/date.utils";
 import { onUpdated, ref, watch } from 'vue';
 import Countdown from './Countdown.vue';
 
@@ -17,15 +17,25 @@ function getResetTime() {
         resetTime.value = getNextWeeklyResetTime(props.context.gameName);
 }
 
+function shouldShowTimer(){
+    if(props.name == 'periodic') return false;
+
+    if (props.name=='daily' || props.name=='weekly') {
+        return props.context.date == getCurrentDateNumberForGame(props.context.gameName)
+    }
+
+    return true;
+}
+
 watch(() => props.context.sessionData, () => getResetTime(), { immediate: "yes" });
 
 </script>
 
 <template>
     <div class="task-box">
-        <div class="task-box-header flex-row">
+        <div v-show="name != 'periodic'" class="task-box-header flex-row">
             <p>{{ $t(name) }}</p>
-            <Countdown :date="resetTime" :key="resetTime"></Countdown>
+            <Countdown v-if="shouldShowTimer()" :date="resetTime" :key="resetTime"></Countdown>
         </div>
         <ul>
             <li class="task-list-item" v-for="taskItem in data">

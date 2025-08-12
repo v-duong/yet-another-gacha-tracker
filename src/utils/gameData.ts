@@ -46,8 +46,6 @@ export interface PeriodicTask extends TrackedTask {
 }
 
 export type RankedStagesData = {
-  reset_day: string,
-  reset_period: 14,
   progress_labels?: string[];
   sum_rewards?: boolean;
   stages: RankedStageReward[];
@@ -140,7 +138,7 @@ export async function initializeData() {
 }
 
 
-export function appendGameToString(key: string) {
+export function appendGameToString(key: string|number) {
   return `${sessionData.currentGameView}.${key}`
 }
 

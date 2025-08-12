@@ -13,7 +13,7 @@ export function getNextDailyResetTime(gameName: string) {
     else
         resetTimeString = regionData.reset_time;
 
-    let resetTime = add(new Date(parseResetTimeString(resetTimeString)), { seconds: -1 });
+    let resetTime = add(new Date(parseResetTimeString(resetTimeString)), { seconds: 0 });
 
     if (new Date() > resetTime)
         resetTime = add(resetTime, { days: 1 });
@@ -56,7 +56,7 @@ export function getNextWeeklyResetTime(gameName: string, fromDate: Date = new Da
             break;
     }
 
-    let resetTime = add(new Date(parseResetTimeString(resetTimeString, nextWeek)), { seconds: -1 });
+    let resetTime = add(new Date(parseResetTimeString(resetTimeString, nextWeek)), { seconds: 0 });
 
     return resetTime;
 }
@@ -73,12 +73,12 @@ export function getLastWeeklyResetDateNumber(gameName: string, fromDate: number)
 
 function getLastPeriodicResetDate(resetDate: string, comparedDateNumber: number, resetPeriod: number) {
     let date = dateNumberToDate(comparedDateNumber);
-    let resetDateArr = resetDate.split('-').map(x=>Number.parseInt(x));
+    let resetDateArr = resetDate.split('-').map(x => Number.parseInt(x));
     let referenceDate = new Date(resetDateArr[0], resetDateArr[1] - 1, resetDateArr[2])
     let difference = referenceDate.getTime() - date.getTime();
     let days = millisecondsToHours(difference) / 24;
     let daysToLastPeriodic = (resetPeriod - days) % resetPeriod;
-    return add(date,{days: -daysToLastPeriodic});
+    return add(date, { days: -daysToLastPeriodic });
 }
 
 export function getLastPeriodicResetDateNumber(resetDate: string, comparedDateNumber: number, resetPeriod: number) {
@@ -87,9 +87,23 @@ export function getLastPeriodicResetDateNumber(resetDate: string, comparedDateNu
 }
 
 export function getNextPeriodicResetDateNumber(resetDate: string, comparedDateNumber: number, resetPeriod: number) {
-
+    let date = getLastPeriodicResetDate(resetDate, comparedDateNumber, resetPeriod);
+    return dateToDateNumber(add(date, { days: resetPeriod }));
 }
 
+export function getNextPeriodicResetTime(gameName: string, resetDate: string, comparedDateNumber: number, resetPeriod: number) {
+    let resetTimeString = "00:00:00";
+    let regionData = sessionData.cachedGameSession[gameName]?.lastSelectedRegion;
+
+    if (regionData == null)
+        console.log("region data not found");
+    else
+        resetTimeString = regionData.reset_time;
+
+
+    let date = add(getLastPeriodicResetDate(resetDate, comparedDateNumber, resetPeriod),{days: resetPeriod});
+    return new Date(parseResetTimeString(resetTimeString, date));
+}
 
 // This returns a UTC timestamp
 export function parseResetTimeString(resetTimeString: string, d: Date = new Date()) {

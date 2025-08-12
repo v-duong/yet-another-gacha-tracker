@@ -27,5 +27,5 @@ function tick() {
 </script>
 
 <template>
-    <div>{{ countdown }}</div>
+    <div :title="date">{{ countdown }}</div>
 </template>

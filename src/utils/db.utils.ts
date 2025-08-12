@@ -5,6 +5,8 @@ import { CurrencyValue } from './gameData';
 import { DayData } from './sessionData';
 
 
+// select * from weekly w where date = (select max(date) from weekly w_inner where w_inner.name = w.name);
+
 export class TrackerDatabase {
     db: Database;
 

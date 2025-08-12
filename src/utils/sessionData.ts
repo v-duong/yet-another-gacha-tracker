@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { RegionData, gameData, CurrencyValue } from './gameData';
+import { RegionData, gameData, CurrencyValue, TrackedTask } from './gameData';
 import { TaskRecord, HistoryRecord, CurrencyHistory } from './db.utils';
 import { dateNumberToDate, getCurrentDateForGame, getCurrentDateNumberForGame, getDateNumberWithOffset } from './date.utils';
 import { findCurrencyRecord } from './helpers.utils';
@@ -115,9 +115,8 @@ export class GameSession {
     let highest = 0, highestDate = 0;
 
     for (let i = date_start; i < date_end; i++) {
-      //@ts-ignore
-      if (this.cachedDays == null || this.cachedDays[i] == null) continue;
-      //@ts-ignore
+      if (this.cachedDays == null || this.cachedDays[i] == null || this.cachedDays[i].populated == false) continue;
+
       let num = this.cachedDays[i].getProgress(taskType, taskId) as number;
 
       if (num == null)
@@ -131,6 +130,31 @@ export class GameSession {
     }
 
     return { highest: highest, highestDate: highestDate };
+  }
+
+  getHighestProgressForRankedStagesinRange(taskType: string, configData: TrackedTask, date_start: number, date_end: number): [{ [key: string]: number } | null, number] {
+    let res: { [key: string]: number } = {};
+    let highestDate = 0;
+
+    if (configData.ranked_stages == null) return [null, 0];
+
+    for (let i = date_start; i < date_end; i++) {
+      if (this.cachedDays == null || this.cachedDays[i] == null || this.cachedDays[i].populated == false) continue;
+
+      let valuesObj = this.cachedDays[i].getRankedProgress(taskType, configData.id);
+
+      if (valuesObj == null)
+        continue;
+
+      for (const key in valuesObj) {
+        if (valuesObj[key] > res[key] || !(key in res)) {
+          res[key] = valuesObj[key];
+          highestDate = i;
+        }
+      }
+    }
+
+    return [res, highestDate];
   }
 
   async populateInitialCurrencyValue(date: number) {
@@ -243,6 +267,7 @@ export class GameSession {
 
 export class TrackedProgressData {
   value: number = 0;
+  rankedStageValues: { [key: string]: number } = {};
   currencies: CurrencyValue[] = [];
 }
 
@@ -290,6 +315,24 @@ export class DayData {
     return 0;
   }
 
+  getRankedProgress(taskType: string, taskId: string) {
+    switch (taskType) {
+      case 'daily':
+        if (this.dailyProgress[taskId] == null) return null;
+        return this.dailyProgress[taskId] ? this.dailyProgress[taskId].rankedStageValues : null;
+      case 'weekly':
+        if (this.weeklyProgress[taskId] == null) return null;
+        return this.weeklyProgress[taskId] ? this.weeklyProgress[taskId].rankedStageValues : null;
+      case 'periodic':
+        if (this.periodicProgress[taskId] == null) return null;
+        return this.periodicProgress[taskId] ? this.periodicProgress[taskId].rankedStageValues : null;
+      case 'event':
+        if (this.eventProgress[taskId] == null) return null;
+        return this.eventProgress[taskId] ? this.periodicProgress[taskId].rankedStageValues : null;
+    }
+    return null;
+  }
+
   setProgress(taskType: string, name: string, value: number | string, currencies: CurrencyValue[]) {
     let progressType;
     switch (taskType) {
@@ -316,6 +359,38 @@ export class DayData {
     if (progressType[name] == null) progressType[name] = new TrackedProgressData();
 
     progressType[name].value = value as number;
+    progressType[name].currencies = currencies;
+
+    this.populated = true;
+    this.calculateGainFromTasks();
+  }
+
+  setRankedStageProgress(taskType: string, name: string, stageName: string, value: number | string, currencies: CurrencyValue[]) {
+    let progressType;
+    switch (taskType) {
+      case 'daily':
+        progressType = this.dailyProgress;
+        break;
+      case 'weekly':
+        progressType = this.weeklyProgress;
+        break;
+      case 'periodic':
+        progressType = this.periodicProgress;
+        break;
+      case 'event':
+        progressType = this.eventProgress;
+        break;
+      case 'other':
+        this.otherSources[name].notes = value as string;
+        this.calculateGainFromTasks();
+        return;
+      default:
+        return;
+    }
+
+    if (progressType[name] == null) progressType[name] = new TrackedProgressData();
+
+    progressType[name].rankedStageValues[stageName] = value as number;
     progressType[name].currencies = currencies;
 
     this.populated = true;
