@@ -64,7 +64,14 @@
     {
       "id": "daily_polychrome_membership",
       "currency": "polychrome",
-      "amount": 90
+      "cost": 4.99,
+      "amount": 90,
+      "bonus": [
+        {
+          "currency": "monochrome",
+          "amount": 300
+        }
+      ]
     }
   ],
   "regions": [
@@ -171,6 +178,55 @@
     {
       "id": "notorious_hunt",
       "steps": 3
+    }
+  ],
+  "periodic": [
+    {
+      "id": "shiyu_defense",
+      "reset_day":"2025-08-15",
+      "reset_period": 14,
+      "ranked_rewards": {
+        "progress_labels": [
+          "b_rank",
+          "a_rank",
+          "s_rank"
+        ],
+        "sum_rewards": true,
+        "stages": [
+          {
+            "id": "shiyu_defense_1",
+            "rewards": [
+              {
+                "step": 0,
+                "currencies": [
+                  {
+                    "currency": "polychrome",
+                    "amount": 30
+                  }
+                ]
+              },
+              {
+                "step": 1,
+                "currencies": [
+                  {
+                    "currency": "polychrome",
+                    "amount": 30
+                  }
+                ]
+              },
+              {
+                "step": 2,
+                "currencies": [
+                  {
+                    "currency": "polychrome",
+                    "amount": 30
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

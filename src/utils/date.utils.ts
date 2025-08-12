@@ -1,4 +1,4 @@
-import { add, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, nextSaturday, nextSunday } from "date-fns";
+import { add, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, nextSaturday, nextSunday, millisecondsToHours } from "date-fns";
 import { gameData } from "./gameData";
 import { sessionData } from "./sessionData";
 
@@ -27,7 +27,6 @@ export function getNextWeeklyResetTime(gameName: string, fromDate: Date = new Da
 
     if (regionData == null)
         console.log("region data not found");
-
     else
         resetTimeString = regionData.reset_time;
 
@@ -72,18 +71,40 @@ export function getLastWeeklyResetDateNumber(gameName: string, fromDate: number)
     return dateToDateNumber(lastWeekly);
 }
 
+function getLastPeriodicResetDate(resetDate: string, comparedDateNumber: number, resetPeriod: number) {
+    let date = dateNumberToDate(comparedDateNumber);
+    let resetDateArr = resetDate.split('-').map(x=>Number.parseInt(x));
+    let referenceDate = new Date(resetDateArr[0], resetDateArr[1] - 1, resetDateArr[2])
+    let difference = referenceDate.getTime() - date.getTime();
+    let days = millisecondsToHours(difference) / 24;
+    let daysToLastPeriodic = (resetPeriod - days) % resetPeriod;
+    return add(date,{days: -daysToLastPeriodic});
+}
+
+export function getLastPeriodicResetDateNumber(resetDate: string, comparedDateNumber: number, resetPeriod: number) {
+    let date = getLastPeriodicResetDate(resetDate, comparedDateNumber, resetPeriod);
+    return dateToDateNumber(date);
+}
+
+export function getNextPeriodicResetDateNumber(resetDate: string, comparedDateNumber: number, resetPeriod: number) {
+
+}
+
+
+// This returns a UTC timestamp
 export function parseResetTimeString(resetTimeString: string, d: Date = new Date()) {
     let resetNums = resetTimeString.split(/\:| /);
     let resetTime: number;
+    let parsedNums = resetNums.map((x) => Number.parseInt(x));
 
-    if (resetNums.length >= 5) {
-        let parsedNums = resetNums.map((x) => Number.parseInt(x));
-
+    if (parsedNums.length >= 5) {
         if (parsedNums[3] < 0) parsedNums[4] *= -1;
 
         resetTime = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), parsedNums[0] - parsedNums[3], parsedNums[1] - parsedNums[4], parsedNums[2]);
+    } else if (parsedNums.length >= 3) {
+        resetTime = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), parsedNums[0], parsedNums[1], parsedNums[2]);
     } else {
-        resetTime = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+        resetTime = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
     }
 
     return resetTime;

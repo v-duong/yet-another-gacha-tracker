@@ -1,29 +1,38 @@
 <script setup lang="ts">
-import { watch } from 'vue';
+import { ref, watch } from 'vue';
 import { appendGameToString, SteppedRewardEntry } from '../utils/gameData';
 import { handleTaskRecordChange } from '../utils/helpers.utils';
-import {  getLastWeeklyResetDateNumber } from "../utils/date.utils";
+import { dateNumberToDate, getLastWeeklyResetDateNumber } from "../utils/date.utils";
+import './style/TaskEntry.css'
 
 const props = defineProps(['data', 'taskType', 'context']);
 const stepValue = defineModel({ default: 0 });
+const lastRecords = ref();
 
 let maxSteps = 0;
 let minSteps = 0;
 let cachedValue: number = -4;
+
+
 props.data.stepped_rewards?.forEach((entry: SteppedRewardEntry) => {
     if (entry.step > maxSteps) maxSteps = entry.step;
 });
 
 watch(() => [props.context.date, props.context.sessionData], () => {
     let x = props.context.sessionData.cachedDays[props.context.date]?.getProgress(props.taskType, props.data.id);
-    let res = props.context.sessionData.getHighestProgressForSteppedinRange(props.taskType, props.data.id, getLastWeeklyResetDateNumber(props.context.gameName, props.context.date), props.context.date);
+    let resetDay = getLastWeeklyResetDateNumber(props.context.gameName, props.context.date);
+
+    let res = props.context.sessionData.getHighestProgressForTaskinRange(props.taskType, props.data.id, resetDay, props.context.date);
 
     if (x != null) {
         stepValue.value = x;
-    } 
+    } else {
+        stepValue.value = res.highest;
+    }
 
     minSteps = res.highest;
     stepValue.value = stepValue.value < minSteps ? minSteps : stepValue.value;
+    lastRecords.value = res;
 }, { immediate: true })
 
 function getTotalFromStepped(stepped_rewards_array: SteppedRewardEntry[]) {
@@ -70,25 +79,29 @@ function clampStepValueAndUpdate() {
 
 
 <template>
-    <div class="task-entry flex-row">
-        <div class="stepped-counter flex-row">
-            <button @click="decrement">-</button>
-            <input type="number" class="step-input" v-model="stepValue" :id="data.id" @change="// @ts-ignore 
-                (e) => { clampStepValueAndUpdate(); }" />
-            <div>/ {{ maxSteps }}</div>
-            <button @click="increment">+</button>
-        </div>
-        <p>{{ data.id }}</p>
-        <div class="rewards-list">
-            <div class="reward-list-item">
-                <div v-for="(value, currency) in getTotalFromStepped(data.stepped_rewards)">
-                    {{ value }} {{
-                        // @ts-ignore
-                        $t(appendGameToString(currency))
-                    }}</div>
+    <div class="task-entry-container flex-column">
+        <div class="task-entry flex-row">
+            <div class="stepped-counter flex-row">
+                <button @click="decrement">-</button>
+                <input type="number" class="step-input" v-model="stepValue" :id="data.id" @change="// @ts-ignore 
+                    (e) => { clampStepValueAndUpdate(); }" />
+                <div>/ {{ maxSteps }}</div>
+                <button @click="increment">+</button>
+            </div>
+            <p>{{ data.id }}</p>
+            <div class="rewards-list">
+                <div class="reward-list-item">
+                    <div v-for="(value, currency) in getTotalFromStepped(data.stepped_rewards)">
+                        {{ value }} {{
+                            // @ts-ignore
+                            $t(appendGameToString(currency))
+                        }}</div>
+                </div>
             </div>
         </div>
+        <div v-show="lastRecords.highestDate != 0"> Previous record: {{ lastRecords.highest }} on {{ dateNumberToDate(lastRecords.highestDate).toISOString().slice(0,10) }}</div>
     </div>
+    
 </template>
 
 <style lang="css" scoped>

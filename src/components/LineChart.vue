@@ -11,8 +11,6 @@ const props = defineProps(['data', 'context', 'currency']);
 
 let data = ref([]);
 
-console.log(data);
-
 let chartData = {};
 
 let config = {

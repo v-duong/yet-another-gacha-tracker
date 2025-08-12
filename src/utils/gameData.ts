@@ -17,7 +17,7 @@ export type GameTrackerConfig = {
   gacha: GachaBanner[];
   daily?: TrackedTask[];
   weekly?: TrackedTask[];
-  periodic?: TrackedTask[];
+  periodic?: PeriodicTask[];
 }
 
 export type RegionData = {
@@ -33,11 +33,29 @@ export type GachaBanner = {
   target_rate?: number;
 }
 
-export type TrackedTask = {
+export interface TrackedTask {
   id: string;
   rewards: CurrencyValue[];
-  steps: number;
   stepped_rewards: SteppedRewardEntry[];
+  ranked_stages: RankedStagesData;
+}
+
+export interface PeriodicTask extends TrackedTask {
+  reset_day: string;
+  reset_period: number;
+}
+
+export type RankedStagesData = {
+  reset_day: string,
+  reset_period: 14,
+  progress_labels?: string[];
+  sum_rewards?: boolean;
+  stages: RankedStageReward[];
+}
+
+export type RankedStageReward = {
+  id: string;
+  rewards: SteppedRewardEntry[];
 }
 
 export interface CurrencyConfig {

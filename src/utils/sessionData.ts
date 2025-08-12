@@ -33,12 +33,14 @@ export class GameSession {
     const dailyRecords = await db.getAllDailyRecord(date, region);
     const weeklyRecords = await db.getAllWeeklyRecord(date, region);
     const periodicRecords = await db.getAllPeriodicRecord(date, region);
+    const eventRecords = await db.getAllEventRecord(date, region);
     const otherRecords = await db.getAllOtherRecord(date, region);
     const historyRecord = await db.getCurrencyHistory(date, region);
 
-    dailyRecords?.forEach((record) => this.fillRecord(record, 'dailyProgress', 'totalCurrencyFromDaily'));
-    weeklyRecords?.forEach((record) => this.fillRecord(record, 'weeklyProgress', 'totalCurrencyFromWeekly'));
-    periodicRecords?.forEach((record) => this.fillRecord(record, 'periodicProgress', 'totalCurrencyFromPeriodic'));
+    dailyRecords?.forEach((record) => this.fillRecord(record, 'dailyProgress'));
+    weeklyRecords?.forEach((record) => this.fillRecord(record, 'weeklyProgress'));
+    periodicRecords?.forEach((record) => this.fillRecord(record, 'periodicProgress'));
+    eventRecords?.forEach((record) => this.fillRecord(record, 'eventProgress'));
 
     const selectedDay = this.cachedDays[date];
 
@@ -69,12 +71,14 @@ export class GameSession {
     const dailyRecords = await db.getAllDailyRecordForRange(date_start, date_end, region);
     const weeklyRecords = await db.getAllWeeklyRecordForRange(date_start, date_end, region);
     const periodicRecords = await db.getAllPeriodicRecordForRange(date_start, date_end, region);
+    const eventRecords = await db.getAllEventRecordForRange(date_start, date_end, region);
     const otherRecords = await db.getAllOtherRecordForRange(date_start, date_end, region);
     const historyRecord = await db.getCurrencyHistoryForRange(date_start, date_end, region);
 
-    dailyRecords?.forEach((record) => this.fillRecord(record, 'dailyProgress', 'totalCurrencyFromDaily'));
-    weeklyRecords?.forEach((record) => this.fillRecord(record, 'weeklyProgress', 'totalCurrencyFromWeekly'));
-    periodicRecords?.forEach((record) => this.fillRecord(record, 'periodicProgress', 'totalCurrencyFromPeriodic'));
+    dailyRecords?.forEach((record) => this.fillRecord(record, 'dailyProgress'));
+    weeklyRecords?.forEach((record) => this.fillRecord(record, 'weeklyProgress'));
+    periodicRecords?.forEach((record) => this.fillRecord(record, 'periodicProgress'));
+    eventRecords?.forEach((record) => this.fillRecord(record, 'eventProgress'));
 
     otherRecords?.forEach((record) => {
       this.cachedDays[record.date].otherSources[record.name].notes = record.notes;
@@ -84,7 +88,7 @@ export class GameSession {
     this.fillHistoryRecord(historyRecord);
   }
 
-  fillRecord(record: TaskRecord, firstField: string, secondField: string) {
+  fillRecord(record: TaskRecord, firstField: string) {
     //@ts-ignore
     if (this.cachedDays[record.date][firstField][record.name] == null) this.cachedDays[record.date][firstField][record.name] = new TrackedProgressData();
     //console.log(record);
@@ -107,15 +111,18 @@ export class GameSession {
     }
   }
 
-  getHighestProgressForSteppedinRange(taskType: string, taskId: string, date_start: number, date_end: number) {
+  getHighestProgressForTaskinRange(taskType: string, taskId: string, date_start: number, date_end: number) {
     let highest = 0, highestDate = 0;
-    let target = taskType == 'weekly' ? 'weeklyProgress' : 'periodicProgress';
 
     for (let i = date_start; i < date_end; i++) {
       //@ts-ignore
-      if (this.cachedDays == null || this.cachedDays[i] == null || this.cachedDays[i][target][taskId] == null) continue;
+      if (this.cachedDays == null || this.cachedDays[i] == null) continue;
       //@ts-ignore
-      let num = this.cachedDays[i][target][taskId].value;
+      let num = this.cachedDays[i].getProgress(taskType, taskId) as number;
+
+      if (num == null)
+        continue;
+
       if (num > highest) {
         highest = num;
         highestDate = i;
@@ -143,8 +150,6 @@ export class GameSession {
       prevDayData = await this.populateSessionData(prevDate);
     }
 
-    console.log(date);
-
     if (prevDayData.totals.override.length > 0) {
       prevDayData.totals.override.forEach(x => addToInitial(x));
     } else if (prevDayData.populated) {
@@ -152,8 +157,6 @@ export class GameSession {
     } else {
       const db = gameData[this.gameName].db;
       const res = await db.getLastCurrencyHistory(date, this.lastSelectedRegion.id);
-
-      console.log(res)
 
       if (res == null)
         return;
@@ -186,14 +189,14 @@ export class GameSession {
 
       if (prevData.totals.override.length > 0) {
         prevData.totals.override.forEach(x => {
-        let d = findCurrencyRecord(dataToAdjust.totals.initial, x.currency);
-        if (d == null) {
-          d = { currency: x.currency, amount: x.amount };
-          dataToAdjust.totals.initial.push(d);
-        } else {
-          d.amount = x.amount;
-        }
-      });
+          let d = findCurrencyRecord(dataToAdjust.totals.initial, x.currency);
+          if (d == null) {
+            d = { currency: x.currency, amount: x.amount };
+            dataToAdjust.totals.initial.push(d);
+          } else {
+            d.amount = x.amount;
+          }
+        });
       } else {
         prevData.totals.calculated.forEach(x => {
           let d = findCurrencyRecord(dataToAdjust.totals.initial, x.currency);
@@ -243,10 +246,16 @@ export class TrackedProgressData {
   currencies: CurrencyValue[] = [];
 }
 
+export type OtherEntry = {
+  notes: string;
+  currencies: CurrencyValue[];
+};
+
 export class DayData {
   dailyProgress: { [key: string | number]: TrackedProgressData; } = {};
   weeklyProgress: { [key: string | number]: TrackedProgressData; } = {};
   periodicProgress: { [key: string | number]: TrackedProgressData; } = {};
+  eventProgress: { [key: string | number]: TrackedProgressData; } = {};
   otherSources: { [key: string | number]: OtherEntry; } = {};
   totals: { initial: CurrencyValue[], calculated: CurrencyHistory[], override: CurrencyValue[] } = { initial: [], calculated: [], override: [] };
   populated: boolean = false;
@@ -260,17 +269,25 @@ export class DayData {
     })
   }
 
-  getProgress(taskType: string, name: string) {
+  getProgress(taskType: string, taskId: string) {
     switch (taskType) {
       case 'daily':
-        return this.dailyProgress[name] ? this.dailyProgress[name].value : 0;
+        if (this.dailyProgress[taskId] == null) return null;
+        return this.dailyProgress[taskId] ? this.dailyProgress[taskId].value : 0;
       case 'weekly':
-        return this.weeklyProgress[name] ? this.weeklyProgress[name].value : 0;
+        if (this.weeklyProgress[taskId] == null) return null;
+        return this.weeklyProgress[taskId] ? this.weeklyProgress[taskId].value : 0;
       case 'periodic':
-        return this.periodicProgress[name] ? this.periodicProgress[name].value : 0;
+        if (this.periodicProgress[taskId] == null) return null;
+        return this.periodicProgress[taskId] ? this.periodicProgress[taskId].value : 0;
+      case 'event':
+        if (this.eventProgress[taskId] == null) return null;
+        return this.eventProgress[taskId] ? this.periodicProgress[taskId].value : 0;
       case 'other':
-        return this.otherSources[name];
+        if (this.otherSources[taskId] == null) return null;
+        return this.otherSources[taskId];
     }
+    return 0;
   }
 
   setProgress(taskType: string, name: string, value: number | string, currencies: CurrencyValue[]) {
@@ -284,6 +301,9 @@ export class DayData {
         break;
       case 'periodic':
         progressType = this.periodicProgress;
+        break;
+      case 'event':
+        progressType = this.eventProgress;
         break;
       case 'other':
         this.otherSources[name].notes = value as string;
@@ -342,6 +362,10 @@ export class DayData {
     for (let key in this.periodicProgress) {
       addTaskToTotals(this.periodicProgress[key].currencies);
     }
+
+    for (let key in this.eventProgress) {
+      addTaskToTotals(this.eventProgress[key].currencies);
+    }
   }
 
   hasOverride() {
@@ -349,10 +373,5 @@ export class DayData {
   }
 }
 
-
-export type OtherEntry = {
-  notes: string;
-  currencies: CurrencyValue[];
-};
 
 export const sessionData: SessionCache = reactive({ cachedGameSession: {} });

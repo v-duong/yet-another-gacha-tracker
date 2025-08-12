@@ -1,6 +1,7 @@
 <script setup>
 import TaskEntryCheckbox from './TaskEntryCheckbox.vue'
 import TaskEntryStepped from './TaskEntryStepped.vue';
+import TaskEntryRankedStages from './TaskEntryRankedStages.vue';
 import { getNextDailyResetTime, getNextWeeklyResetTime } from "../utils/date.utils";
 import { onUpdated, ref, watch } from 'vue';
 import Countdown from './Countdown.vue';
@@ -10,7 +11,6 @@ const props = defineProps(['name', 'context', 'data']);
 let resetTime = ref(0);
 
 function getResetTime() {
-    console.log("test")
     if (props.name == 'daily')
         resetTime.value = getNextDailyResetTime(props.context.gameName);
     else if (props.name == 'weekly')
@@ -33,6 +33,8 @@ watch(() => props.context.sessionData, () => getResetTime(), { immediate: "yes" 
                 </TaskEntryCheckbox>
                 <TaskEntryStepped v-else-if="taskItem.stepped_rewards != null" :data="taskItem" :taskType="name"
                     :context="context"></TaskEntryStepped>
+                <TaskEntryRankedStages v-else-if="taskItem.ranked_stages != null" :data="taskItem" :taskType="name"
+                    :context="context"></TaskEntryRankedStages>
             </li>
         </ul>
     </div>
@@ -46,15 +48,5 @@ watch(() => props.context.sessionData, () => getResetTime(), { immediate: "yes" 
     border-bottom: 1px solid var(--background-color-highlight);
 }
 
-.task-entry {
-    gap: 2em;
-    justify-content: space-between;
-    padding: 0.75em 1em;
-    flex-grow: 1;
-}
 
-.task-list-item {
-    display: inline-flex;
-    width: 100%;
-}
 </style>

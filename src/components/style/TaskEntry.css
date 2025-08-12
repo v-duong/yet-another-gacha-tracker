@@ -1,0 +1,16 @@
+.task-entry-container {
+  width: 100%;
+  padding: 0.75em 1em;
+  gap:0.5em;
+}
+
+.task-entry {
+  gap: 2em;
+  justify-content: space-between;
+  flex-grow: 1;
+}
+
+.task-list-item {
+  display: inline-flex;
+  width: 100%;
+}

@@ -42,6 +42,8 @@ async function updateCurrent() {
         <div class="task-container">
             <TaskBox v-if="currentContext.config?.daily != null" id="daily-tasks" :name="'daily'" :context="currentContext" :data="currentContext.config?.daily" />
             <TaskBox v-if="currentContext.config?.weekly != null" id="weekly-tasks" :name="'weekly'" :context="currentContext" :data="currentContext.config?.weekly" />
+            <TaskBox v-if="currentContext.config?.periodic != null" id="periodic-tasks" :name="'periodic'" :context="currentContext" :data="currentContext.config?.periodic" />
+            <TaskBox v-if="currentContext.config?.event != null" id="event-tasks" :name="'event'" :context="currentContext" :data="currentContext.config?.event" />
         </div>
         <SessionSummaryBar :context="currentContext" />
     </div>
@@ -54,7 +56,7 @@ async function updateCurrent() {
     padding: 1em;
     width: calc(100% - 2em);
     position: relative;
-    background-color: var(--background-color-secondary);
+    background-color: var(--background-color-tertiary);
 }
 
 .main-view-container {

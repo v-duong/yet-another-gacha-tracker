@@ -1,7 +1,7 @@
 import { CurrencyValue, gameData, TrackedTask } from "./gameData";
 import { sessionData, GameSession } from './sessionData';
 import { CurrencyHistory, TrackerDatabase } from "./db.utils";
-import { getLastWeeklyResetDateNumber, getCurrentDateNumberForGame, dateToDateNumber, getLastWeeklyResetTime, getNextWeeklyResetTime, getDateNumberWithOffset } from "./date.utils";
+import { getLastWeeklyResetDateNumber, getCurrentDateNumberForGame, getDateNumberWithOffset, getLastPeriodicResetDate, getLastPeriodicResetDateNumber } from "./date.utils";
 
 const timerArray: { [key: string]: number } = {};
 
@@ -19,7 +19,7 @@ export async function handleTaskRecordChange(gameName: string, taskType: string,
 
         if (taskType == 'weekly') {
             let lastWeekly = getLastWeeklyResetDateNumber(gameName, date);
-            compareValue = session.getHighestProgressForSteppedinRange(taskType, data.id, lastWeekly, date).highest;
+            compareValue = session.getHighestProgressForTaskinRange(taskType, data.id, lastWeekly, date).highest;
         }
 
         data.stepped_rewards.forEach(x => {
@@ -104,10 +104,19 @@ export async function updateGameView(gameName: string) {
 
     let date = sessionData.cachedGameSession[gameName].lastSelectedDay;
 
-    const lastWeekly = getLastWeeklyResetDateNumber(gameName, date);
-    const nextWeekly = getDateNumberWithOffset(date, 7);
+    let startDate = getLastWeeklyResetDateNumber(gameName, date);
+    let endDate = getDateNumberWithOffset(date, 7);
 
-    await sessionData.cachedGameSession[gameName].populateSessionDateRange(lastWeekly, nextWeekly);
+
+    if (gameData[gameName].config.periodic != null) {
+        gameData[gameName].config.periodic.forEach(periodic => {
+            let lastPeriod = getLastPeriodicResetDateNumber(periodic.reset_day, date, periodic.reset_period);
+            if (lastPeriod < startDate)
+                startDate = lastPeriod;
+        })
+    }
+
+    await sessionData.cachedGameSession[gameName].populateSessionDateRange(startDate, endDate);
 
     // get most recent total currency values
     await sessionData.cachedGameSession[gameName].populateInitialCurrencyValue(date);

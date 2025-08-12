@@ -15,11 +15,13 @@ export class TrackerDatabase {
     getAllDailyRecord = async (date: number, region: string) => await this.getAllTaskRecordForDay('daily', date, region);
     getAllWeeklyRecord = async (date: number, region: string) => await this.getAllTaskRecordForDay('weekly', date, region);
     getAllPeriodicRecord = async (date: number, region: string) => await this.getAllTaskRecordForDay('periodic', date, region);
+    getAllEventRecord = async (date: number, region: string) => await this.getAllTaskRecordForDay('event', date, region);
     getAllOtherRecord = async (date: number, region: string) => await this.getAllTaskRecordForDay('other', date, region);
 
     getAllDailyRecordForRange = async (date_start: number, date_end: number, region: string) => this.getAllTaskRecordForRange('daily', date_start, date_end, region);
     getAllWeeklyRecordForRange = async (date_start: number, date_end: number, region: string) => this.getAllTaskRecordForRange('weekly', date_start, date_end, region);
     getAllPeriodicRecordForRange = async (date_start: number, date_end: number, region: string) => this.getAllTaskRecordForRange('periodic', date_start, date_end, region);
+    getAllEventRecordForRange = async (date_start: number, date_end: number, region: string) => this.getAllTaskRecordForRange('event', date_start, date_end, region);
     getAllOtherRecordForRange = async (date_start: number, date_end: number, region: string) => this.getAllTaskRecordForRange('other', date_start, date_end, region);
 
     getAllTaskRecordForRange = async (taskType: string, date_start: number, date_end: number, region: string) => this.getTaskRecordForRange(taskType, date_start, date_end, region);
@@ -143,6 +145,8 @@ export class TrackerDatabase {
             )
         })
     }
+
+
 }
 
 export type TaskRecord = {
@@ -151,6 +155,16 @@ export type TaskRecord = {
     name: string;
     value: number;
     currencies: CurrencyValue[];
+    notes: string;
+}
+
+export type RankedTaskRecord = {
+    date: number;
+    region: string;
+    parent_task: string;
+    stage_name: string;
+    value: number;
+    score: number;
     notes: string;
 }
 
@@ -167,6 +181,17 @@ export type CurrencyHistory = {
     amount: number;
     gain: number;
     loss: number;
+}
+
+export type PremiumRecord = {
+    date: number;
+    region: string;
+    id: number;
+    name: string;
+    category: string;
+    spending: number;
+    currencies: CurrencyValue[];
+    notes: string;
 }
 
 export async function loadDB(gameTitle: string) {
@@ -197,6 +222,19 @@ async function createTable(db: Database, tableName: string) {
     )
 }
 
+async function createRankedStageTaskTable(db: Database, tableName: string) {
+    const res = await db.execute(
+        `CREATE TABLE IF NOT EXISTS ${tableName}(date INTEGER, region TEXT, parent_task TEXT, stage_name TEXT, value NUMBER, score NUMBER, notes TEXT)`
+    )
+}
+
+async function createPremiumTable(db: Database, tableName: string) {
+    const res = await db.execute(
+        `CREATE TABLE IF NOT EXISTS ${tableName}(date INTEGER, region TEXT, id number, name TEXT, category TEXT, spending REAL, currencies TEXT, notes TEXT)`
+    )
+}
+
+
 async function createHistoryTable(db: Database, tableName: string) {
     const res = await db.execute(
         `CREATE TABLE IF NOT EXISTS ${tableName}(date INTEGER, region TEXT, currencies TEXT, override TEXT, notes TEXT)`
@@ -211,6 +249,10 @@ async function initalizeDB(db: Database) {
     createTable(db, "periodic");
     createTable(db, "event");
     createTable(db, "other");
+
+    createRankedStageTaskTable(db, "ranked_stages");
+
+    createPremiumTable(db, "premium");
 
     createHistoryTable(db, "currencyHistory");
 }
