@@ -1,8 +1,8 @@
 import { reactive } from 'vue';
-import { RegionData, gameData, CurrencyValue, TrackedTask } from './gameData';
-import { TaskRecord, HistoryRecord, CurrencyHistory } from './db.utils';
+import { RegionData, gameData, CurrencyValue, TrackedTask, GameTrackerConfig } from './gameData';
+import { TaskRecord, HistoryRecord, CurrencyHistory, RankedTaskRecord } from './db.utils';
 import { dateNumberToDate, getCurrentDateForGame, getCurrentDateNumberForGame, getDateNumberWithOffset } from './date.utils';
-import { findCurrencyRecord } from './helpers.utils';
+import { findCurrencyRecord, sumCurrenciesforSteppedRewards } from './helpers.utils';
 
 export type SessionCache = {
   cachedGameSession: { [key: string | number]: GameSession; };
@@ -28,6 +28,7 @@ export class GameSession {
       return this.cachedDays[date];
 
     const db = gameData[this.gameName].db;
+    const config = gameData[this.gameName].config;
     const region = this.lastSelectedRegion.id;
 
     const dailyRecords = await db.getAllDailyRecord(date, region);
@@ -50,16 +51,18 @@ export class GameSession {
     });
 
     this.fillHistoryRecord(historyRecord);
+    await this.fillRankedStageRecord(config, date, date);
 
     return selectedDay;
   }
 
   async populateSessionDateRange(date_start: number, date_end: number) {
     const db = gameData[this.gameName].db;
+    const config = gameData[this.gameName].config;
     const region = this.lastSelectedRegion.id;
     let needsPopulate = false;
 
-    for (let i = date_start; i < date_end; i = getDateNumberWithOffset(i, 1)) {
+    for (let i = date_start; i <= date_end; i = getDateNumberWithOffset(i, 1)) {
       if (this.cachedDays[i] == null) {
         this.cachedDays[i] = new DayData(this.gameName);
         needsPopulate = true;
@@ -86,6 +89,50 @@ export class GameSession {
     });
 
     this.fillHistoryRecord(historyRecord);
+
+    await this.fillRankedStageRecord(config, date_start, date_end);
+  }
+
+  private async fillRankedStageRecord(config: GameTrackerConfig, date_start: number, date_end: number) {
+    let tasksArr = [config.daily, config.weekly, config.periodic];
+    let typeArr = ['daily', 'weekly', 'periodic'];
+    for (let i = 0; i < tasksArr.length; i++) {
+      tasksArr[i]?.forEach(async (taskConfig) => {
+        if (taskConfig.ranked_stages != null) {
+          await this.populateRankedStagesForRange(date_start, date_end, taskConfig.id, typeArr[i]);
+        }
+      });
+    }
+  }
+
+  async populateRankedStagesForRange(date_start: number, date_end: number, parent_task: string, taskType: string) {
+    const db = gameData[this.gameName].db;
+    const region = this.lastSelectedRegion.id;
+
+    const rankedStageRecords: RankedTaskRecord[] | null = await db.getAllRankedStageRecordForRange(date_start, date_end, region, parent_task);
+
+    rankedStageRecords?.forEach(record => {
+      let progressType = null;
+      switch (taskType) {
+        case 'daily':
+          progressType = this.cachedDays[record.date].dailyProgress;
+          break;
+        case 'weekly':
+          progressType = this.cachedDays[record.date].weeklyProgress;
+          break;
+        case 'periodic':
+          progressType = this.cachedDays[record.date].periodicProgress;
+          break;
+        case 'event':
+          progressType = this.cachedDays[record.date].eventProgress;
+          break;
+      }
+
+      if (progressType == null) return;
+
+      progressType[parent_task].rankedStageValues[record.stage_name] = record.value;
+    });
+
   }
 
   fillRecord(record: TaskRecord, firstField: string) {
@@ -111,10 +158,11 @@ export class GameSession {
     }
   }
 
+
   getHighestProgressForTaskinRange(taskType: string, taskId: string, date_start: number, date_end: number) {
     let highest = 0, highestDate = 0;
 
-    for (let i = date_start; i < date_end; i++) {
+    for (let i = date_start; i < date_end; i = getDateNumberWithOffset(i, 1)) {
       if (this.cachedDays == null || this.cachedDays[i] == null || this.cachedDays[i].populated == false) continue;
 
       let num = this.cachedDays[i].getProgress(taskType, taskId) as number;
@@ -138,7 +186,7 @@ export class GameSession {
 
     if (configData.ranked_stages == null) return [null, 0];
 
-    for (let i = date_start; i < date_end; i++) {
+    for (let i = date_start; i < date_end; i = getDateNumberWithOffset(i, 1)) {
       if (this.cachedDays == null || this.cachedDays[i] == null || this.cachedDays[i].populated == false) continue;
 
       let valuesObj = this.cachedDays[i].getRankedProgress(taskType, configData.id);
@@ -196,9 +244,45 @@ export class GameSession {
     selectedDay.calculateGainFromTasks();
   }
 
+  async adjustSteppedRewardsValuesRetroactive(data: TrackedTask, date: number, date_end: number, taskType: string, value: number) {
+    let records = [];
+    for (let i = date; i <= date_end; i = getDateNumberWithOffset(i, 1)) {
+      if (this.cachedDays[i] == null)
+        await this.populateSessionData(i);
+
+      let dataToAdjust = this.cachedDays[i];
+      let progressData = null;
+
+      if (taskType == 'weekly' && dataToAdjust.weeklyProgress[data.id] != null)
+        progressData = dataToAdjust.weeklyProgress[data.id];
+      else if (taskType == 'periodic' && dataToAdjust.periodicProgress[data.id] != null)
+        progressData = dataToAdjust.weeklyProgress[data.id];
+      else
+        continue
+
+      let currencies: CurrencyValue[] = [];
+
+      if (progressData.value < value) {
+        progressData.value = value;
+      } 
+
+      sumCurrenciesforSteppedRewards(data, value, progressData.value, this.gameName, currencies);
+
+      value = progressData.value;
+
+      console.log(i, currencies);
+      progressData.currencies = currencies;
+      records.push(i);
+
+    }
+    console.log(records);
+    return records;
+  }
+
   async adjustCurrentHistoryRetroactive(date: number) {
     let adjustedRecords: number[] = [];
     let prevData = this.cachedDays[date];
+
 
     let i = getDateNumberWithOffset(date, 1);
     let currentDate = getCurrentDateNumberForGame(this.lastSelectedRegion.reset_time);
@@ -212,25 +296,9 @@ export class GameSession {
         return adjustedRecords;
 
       if (prevData.totals.override.length > 0) {
-        prevData.totals.override.forEach(x => {
-          let d = findCurrencyRecord(dataToAdjust.totals.initial, x.currency);
-          if (d == null) {
-            d = { currency: x.currency, amount: x.amount };
-            dataToAdjust.totals.initial.push(d);
-          } else {
-            d.amount = x.amount;
-          }
-        });
+        prevData.totals.override.forEach(x => adjustInitialValues(dataToAdjust, x));
       } else {
-        prevData.totals.calculated.forEach(x => {
-          let d = findCurrencyRecord(dataToAdjust.totals.initial, x.currency);
-          if (d == null) {
-            d = { currency: x.currency, amount: x.amount };
-            dataToAdjust.totals.initial.push(d);
-          } else {
-            d.amount = x.amount;
-          }
-        });
+        prevData.totals.calculated.forEach(x => adjustInitialValues(dataToAdjust, x));
       }
 
       dataToAdjust.calculateGainFromTasks();
@@ -242,6 +310,16 @@ export class GameSession {
     }
 
     return adjustedRecords;
+
+    function adjustInitialValues(dataToAdjust: DayData, x: CurrencyValue) {
+      let d = findCurrencyRecord(dataToAdjust.totals.initial, x.currency);
+      if (d == null) {
+        d = { currency: x.currency, amount: x.amount };
+        dataToAdjust.totals.initial.push(d);
+      } else {
+        d.amount = x.amount;
+      }
+    }
   }
 
   async getCurrencyDataForRange(currency: string, date_start: number, date_end: number) {
@@ -284,6 +362,9 @@ export class DayData {
   otherSources: { [key: string | number]: OtherEntry; } = {};
   totals: { initial: CurrencyValue[], calculated: CurrencyHistory[], override: CurrencyValue[] } = { initial: [], calculated: [], override: [] };
   populated: boolean = false;
+
+  [name: string]: any;
+
 
   constructor(gameName: string) {
     gameData[gameName].config.currencies.forEach(currency => {

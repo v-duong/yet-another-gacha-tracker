@@ -1,10 +1,13 @@
 import { CurrencyValue, gameData, PeriodicTask, SteppedRewardEntry, TrackedTask } from "./gameData";
 import { sessionData, GameSession } from './sessionData';
 import { CurrencyHistory, TrackerDatabase } from "./db.utils";
-import { getLastWeeklyResetDateNumber, getCurrentDateNumberForGame, getDateNumberWithOffset, getLastPeriodicResetDateNumber } from "./date.utils";
+import { getLastWeeklyResetDateNumber, getCurrentDateNumberForGame, getDateNumberWithOffset, getLastPeriodicResetDateNumber, getNextWeeklyResetDateNumber, getNextPeriodicResetDateNumber } from "./date.utils";
 
 const timerArray: { [key: string]: number } = {};
 
+export function taskTypeToProgressName(taskType: string) {
+    return taskType + 'Progress';
+}
 
 export function findCurrencyRecord(source: CurrencyHistory[] | CurrencyValue[], target: string) {
     return source.find(x => x.currency == target);
@@ -13,21 +16,24 @@ export function findCurrencyRecord(source: CurrencyHistory[] | CurrencyValue[], 
 export async function handleTaskRecordChange(gameName: string, taskType: string, date: number, data: TrackedTask | PeriodicTask, value: number) {
     let currencies: CurrencyValue[] = [];
     const session = sessionData.cachedGameSession[gameName];
+    let nextCheck = 0;
+    let recordsToUpdate: number[] = [];
 
-    if (data.stepped_rewards != null && value > 0) {
+    if (data.stepped_rewards != null) {
         let compareValue = 0;
 
         if (taskType == 'weekly') {
             let lastWeekly = getLastWeeklyResetDateNumber(gameName, date);
+            nextCheck = getNextWeeklyResetDateNumber(gameName, date);
             compareValue = session.getHighestProgressForTaskinRange(taskType, data.id, lastWeekly, date).highest;
         } else if (taskType == 'periodic' && 'reset_day' in data && 'reset_period' in data) {
             let lastPeriod = getLastPeriodicResetDateNumber(data.reset_day, date, data.reset_period);
+            nextCheck = getNextPeriodicResetDateNumber(data.reset_day, date, data.reset_period);
             compareValue = session.getHighestProgressForTaskinRange(taskType, data.id, lastPeriod, date).highest;
         }
 
-        data.stepped_rewards.forEach(x => {
-            sumCurrenciesInRewardsArray(x, compareValue, value, gameName, currencies);
-        })
+        sumCurrenciesforSteppedRewards(data, compareValue, value, gameName, currencies);
+        recordsToUpdate = await session.adjustSteppedRewardsValuesRetroactive(data, getDateNumberWithOffset(date, 1), nextCheck, taskType, value);
     } else if (data.rewards != null && value > 0) {
         data.rewards.forEach(c => {
             if (!gameData[gameName].trackedCurrencies.includes(c.currency))
@@ -39,40 +45,51 @@ export async function handleTaskRecordChange(gameName: string, taskType: string,
 
     session.cachedDays[date].setProgress(taskType, data.id, value, currencies);
 
-    let recordsToUpdate = await session.adjustCurrentHistoryRetroactive(date);
+    let historyRecordsToUpdate = [...new Set([...recordsToUpdate, ...await session.adjustCurrentHistoryRetroactive(date)])];
 
     debounce(data.id, () => {
         gameData[gameName].db.insertTaskRecord(taskType, date, session.lastSelectedRegion.id, data.id, value, currencies, "");
+        gameData[gameName].db.updateTaskRecordsForRange(recordsToUpdate, session.cachedDays, session.lastSelectedRegion.id, taskType, data.id);
         gameData[gameName].db.insertCurrencyHistory(date, session.lastSelectedRegion.id, session.cachedDays[date].totals.calculated, session.cachedDays[date].totals.override, "");
-        gameData[gameName].db.updateCurrencyHistoryForRange(recordsToUpdate, session.cachedDays, session.lastSelectedRegion.id);
+        gameData[gameName].db.updateCurrencyHistoryForRange(historyRecordsToUpdate, session.cachedDays, session.lastSelectedRegion.id);
     });
 
     return currencies;
 }
 
-function sumCurrenciesInRewardsArray(x: SteppedRewardEntry, compareValue: number, value: number, gameName: string, currencies: CurrencyValue[]) {
-    if (x.step > compareValue && x.step <= value) {
-        x.currencies.forEach(c => {
-            if (!gameData[gameName].trackedCurrencies.includes(c.currency))
-                return;
+export function sumCurrenciesforSteppedRewards(data: TrackedTask | PeriodicTask, compareValue: number, value: number, gameName: string, currencies: CurrencyValue[]) {
+    data.stepped_rewards.forEach(x => {
+        if (x.step > compareValue && x.step <= value) {
+            x.currencies.forEach(c => {
+                if (!gameData[gameName].trackedCurrencies.includes(c.currency))
+                    return;
 
-            let existing = currencies.find((y => y.currency == c.currency));
-            if (existing) {
-                existing.amount += c.amount;
-            } else {
-                currencies.push({ ...c });
-            }
-        });
-    }
+                let existing = currencies.find((y => y.currency == c.currency));
+                if (existing) {
+                    existing.amount += c.amount;
+                } else {
+                    currencies.push({ ...c });
+                }
+            });
+        }
+    });
 }
 
-export async function handleRankedStageRecordChange(gameName: string, taskType: string, date: number, data: PeriodicTask, value: number, id: string) {
+export async function handleRankedStageRecordChange(gameName: string, taskType: string, date: number, data: TrackedTask | PeriodicTask, value: number | string, id: string) {
     let currencies: CurrencyValue[] = [];
-    console.log(data);
+    let stagesSum = 0;
     const session = sessionData.cachedGameSession[gameName];
+
+    value = Number.parseInt(value as string);
 
     if (data.ranked_stages != null) {
         let compareValues: { [key: string]: number } | null = null;
+        let currentProgress = session.cachedDays[date].getRankedProgress(taskType, data.id);
+
+        if (currentProgress == null)
+            currentProgress = {};
+
+        currentProgress[id] = value;
 
         if (taskType == 'weekly') {
             let lastWeekly = getLastWeeklyResetDateNumber(gameName, date);
@@ -82,42 +99,56 @@ export async function handleRankedStageRecordChange(gameName: string, taskType: 
             compareValues = session.getHighestProgressForRankedStagesinRange(taskType, data, lastPeriod, date)[0];
         }
 
-        data.ranked_stages.stages.forEach(stage => {
-            let compareValue = 0;
-            if (compareValues != null && stage.id in compareValues)
-                compareValue = compareValues[stage.id];
-
-            stage.rewards.forEach(x => {
-                if (x.step > compareValue && x.step <= value) {
-                    x.currencies.forEach(c => {
-                        if (!gameData[gameName].trackedCurrencies.includes(c.currency))
-                            return;
-
-                        let existing = currencies.find((y => y.currency == c.currency));
-                        if (existing) {
-                            existing.amount += c.amount;
-                        } else {
-                            currencies.push({ ...c });
-                        }
-                    });
-                }
-            })
-        })
+        stagesSum = sumCurrenciesForRankedStages(data, currentProgress, compareValues, gameName, currencies);
     } else {
         return;
     }
 
     session.cachedDays[date].setRankedStageProgress(taskType, data.id, id, value, currencies);
 
-    //let recordsToUpdate = await session.adjustCurrentHistoryRetroactive(date);
-    //
-    //debounce(data.id, () => {
-    //    gameData[gameName].db.insertTaskRecord(taskType, date, session.lastSelectedRegion.id, data.id, value, currencies, "");
-    //    gameData[gameName].db.insertCurrencyHistory(date, session.lastSelectedRegion.id, session.cachedDays[date].totals.calculated, session.cachedDays[date].totals.override, "");
-    //    gameData[gameName].db.updateCurrencyHistoryForRange(recordsToUpdate, session.cachedDays, session.lastSelectedRegion.id);
-    //});
+    let recordsToUpdate = await session.adjustCurrentHistoryRetroactive(date);
+
+    console.log(currencies);
+
+    debounce(data.id, () => {
+        gameData[gameName].db.insertTaskRecord(taskType, date, session.lastSelectedRegion.id, data.id, stagesSum, currencies, "");
+        gameData[gameName].db.insertRankedStageRecord(date, session.lastSelectedRegion.id, data.id, id, value);
+        gameData[gameName].db.insertCurrencyHistory(date, session.lastSelectedRegion.id, session.cachedDays[date].totals.calculated, session.cachedDays[date].totals.override, "");
+        gameData[gameName].db.updateCurrencyHistoryForRange(recordsToUpdate, session.cachedDays, session.lastSelectedRegion.id);
+    });
 
     return currencies;
+}
+
+function sumCurrenciesForRankedStages(data: TrackedTask, currentProgress: { [key: string]: number; }, compareValues: { [key: string]: number; } | null, gameName: string, currencies: CurrencyValue[]) {
+    let stagesSum = 0;
+    data.ranked_stages.stages.forEach(stage => {
+        if (currentProgress[stage.id] == null)
+            return;
+
+        stagesSum += currentProgress[stage.id];
+        let compareValue = -1;
+
+        if (compareValues != null && stage.id in compareValues)
+            compareValue = compareValues[stage.id];
+
+        stage.rewards.forEach(x => {
+            if (x.step > compareValue && x.step <= currentProgress[stage.id]) {
+                x.currencies.forEach(c => {
+                    if (!gameData[gameName].trackedCurrencies.includes(c.currency))
+                        return;
+
+                    let existing = currencies.find((y => y.currency == c.currency));
+                    if (existing) {
+                        existing.amount += c.amount;
+                    } else {
+                        currencies.push({ ...c });
+                    }
+                });
+            }
+        });
+    });
+    return stagesSum;
 }
 
 export async function handleCurrencyHistoryChange(gameName: string, date: number, currency: string, value: number) {
@@ -157,8 +188,9 @@ export function debounce(name: string, func: CallableFunction, wait: number = 50
 }
 
 export async function updateGameView(gameName: string) {
+    let config = gameData[gameName].config;
     if (sessionData.cachedGameSession[gameName] == null) {
-        const regionData = gameData[gameName].config.regions[0];
+        const regionData = config.regions[0];
         let date = getCurrentDateNumberForGame(regionData.reset_time);
         sessionData.cachedGameSession[gameName] = new GameSession(gameName, date, regionData);
     }
@@ -166,11 +198,10 @@ export async function updateGameView(gameName: string) {
     let date = sessionData.cachedGameSession[gameName].lastSelectedDay;
 
     let startDate = getLastWeeklyResetDateNumber(gameName, date);
-    let endDate = getDateNumberWithOffset(date, 7);
+    let endDate = date;
 
-
-    if (gameData[gameName].config.periodic != null) {
-        gameData[gameName].config.periodic.forEach(periodic => {
+    if (config.periodic != null) {
+        config.periodic.forEach(periodic => {
             let lastPeriod = getLastPeriodicResetDateNumber(periodic.reset_day, date, periodic.reset_period);
             if (lastPeriod < startDate)
                 startDate = lastPeriod;

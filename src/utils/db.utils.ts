@@ -3,6 +3,7 @@ import { exists, mkdir } from '@tauri-apps/plugin-fs';
 import Database from '@tauri-apps/plugin-sql';
 import { CurrencyValue } from './gameData';
 import { DayData } from './sessionData';
+import { taskTypeToProgressName } from './helpers.utils';
 
 
 // select * from weekly w where date = (select max(date) from weekly w_inner where w_inner.name = w.name);
@@ -35,7 +36,7 @@ export class TrackerDatabase {
         if (taskId != '')
             taskFilter = `AND name='${taskId}'`;
 
-        const existingRecord: [...any] = await this.db.select(`SELECT * FROM ${taskType} WHERE date>=${date_start} AND date < ${date_end} AND region='${region}' ${taskFilter}`);
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM ${taskType} WHERE date>=${date_start} AND date <= ${date_end} AND region='${region}' ${taskFilter}`);
 
         existingRecord.forEach(x => x.currencies = JSON.parse(x.currencies));
 
@@ -85,6 +86,18 @@ export class TrackerDatabase {
                 [value, currencies, notes],
             )
         }
+    }
+
+    
+    async updateTaskRecordsForRange(dates: number[], targets: { [key: number]: DayData }, region: string, taskType: string, taskId: string) {
+        dates.forEach(d => {
+            const target = targets[d];
+            const memberName = taskTypeToProgressName(taskType);
+            this.db.execute(
+                `UPDATE ${taskType} SET  value=$1, currencies=$2 WHERE date=${d} AND region='${region}' AND name='${taskId}'`,
+                [target[memberName][taskId].value, target[memberName][taskId].currencies],
+            )
+        })
     }
 
     //SELECT * from daily, json_each(currencies) WHERE json_extract(json_each.value,'$.currency') IS 'polychrome';
@@ -138,7 +151,7 @@ export class TrackerDatabase {
         }
     }
 
-    async updateCurrencyHistoryForRange(dates: number[], targets: any, region: string) {
+    async updateCurrencyHistoryForRange(dates: number[], targets: { [key: number]: DayData }, region: string) {
         dates.forEach(d => {
             const target = targets[d];
             this.db.execute(
@@ -148,6 +161,57 @@ export class TrackerDatabase {
         })
     }
 
+    async getAllRankedStageRecordForRange(date_start: number, date_end: number, region: string, parent_task: string) {
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM ranked_stages WHERE  date>=${date_start} AND date<=${date_end} AND region='${region}' AND parent_task='${parent_task}'`);
+
+        if (existingRecord.length > 0)
+            return existingRecord;
+        else
+            return null;
+    }
+
+    async getAllRankedStageRecord(date: number, region: string, parent_task: string) {
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM ranked_stages WHERE  date=${date} AND region='${region}' AND parent_task='${parent_task}'`);
+
+        if (existingRecord.length > 0)
+            return existingRecord;
+        else
+            return null;
+    }
+
+    async getRankedStageRecordForRange(date_start: number, date_end: number, region: string, parent_task: string, stage_name: string) {
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM ranked_stages WHERE  date>=${date_start} AND date <= ${date_end} AND region='${region}' AND parent_task='${parent_task}' AND stage_name='${stage_name}'`);
+
+        if (existingRecord.length > 0)
+            return existingRecord;
+        else
+            return null;
+    }
+
+    async getRankedStageRecord(date: number, region: string, parent_task: string, stage_name: string) {
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM ranked_stages WHERE date=${date} AND region='${region}' AND parent_task='${parent_task}' AND stage_name='${stage_name}'`);
+
+        if (existingRecord.length > 0)
+            return existingRecord;
+        else
+            return null;
+    }
+
+    async insertRankedStageRecord(date: number, region: string, parent_task: string, stage_name: string, value: number, score: number = 0, notes: string = "") {
+        const existingRecord = await this.getRankedStageRecord(date, region, parent_task, stage_name);
+
+        if (existingRecord == null)
+            await this.db.execute(
+                `INSERT into ranked_stages(date, region, parent_task, stage_name, value, score, notes) VALUES($1, $2, $3, $4, $5, $6, $7)`,
+                [date, region, parent_task, stage_name, value, score, notes],
+            )
+        else {
+            await this.db.execute(
+                `UPDATE ranked_stages SET value=$1, score=$2, notes=$3 WHERE date=${date} AND region='${region}' AND parent_task='${parent_task}' AND stage_name='${stage_name}'`,
+                [value, score, notes],
+            )
+        }
+    }
 
 }
 
@@ -178,9 +242,7 @@ export type HistoryRecord = {
     notes: string;
 }
 
-export type CurrencyHistory = {
-    currency: string;
-    amount: number;
+export interface CurrencyHistory extends CurrencyValue {
     gain: number;
     loss: number;
 }

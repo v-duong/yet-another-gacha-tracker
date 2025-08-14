@@ -40,6 +40,7 @@ watch(() => [props.context.date, props.context.sessionData], () => {
     minSteps = res.highest;
     stepValue.value = stepValue.value < minSteps ? minSteps : stepValue.value;
     lastRecords.value = res;
+    cachedValue = stepValue.value;
 }, { immediate: true })
 
 function getTotalFromStepped(stepped_rewards_array: SteppedRewardEntry[]) {
@@ -75,6 +76,7 @@ function clampStepValueAndUpdate() {
     if (stepValue.value > maxSteps)
         stepValue.value = maxSteps;
 
+        console.log(cachedValue, stepValue.value)
     if (cachedValue != stepValue.value) {
         handleTaskRecordChange(props.context.gameName, props.taskType, props.context.date, props.data, stepValue.value);
         cachedValue = stepValue.value;

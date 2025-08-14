@@ -18,6 +18,8 @@ export type GameTrackerConfig = {
   daily?: TrackedTask[];
   weekly?: TrackedTask[];
   periodic?: PeriodicTask[];
+
+  [name:string]: any;
 }
 
 export type RegionData = {

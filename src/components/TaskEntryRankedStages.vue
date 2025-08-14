@@ -53,8 +53,7 @@ watch(() => [props.context.date, props.context.sessionData], () => {
     for (const key in rankedProgressObj) {
         lastRecords.value[key].current = rankedProgressObj[key];
     }
-    console.log(prevProgress)
-}, { immediate: true })
+}, { immediate: true, deep:4 })
 
 function getTotalFromStepped(stepped_rewards_array) {
     let resObj = {};
@@ -100,6 +99,15 @@ function getValueFromLastRecords(s) {
     return lastRecords.value[s].prev;
 }
 
+
+function getPrevValueFromLastRecords(s) {
+    if (lastRecords.value == null)
+        return null;
+
+    return lastRecords.value[s].prev;
+}
+
+
 </script>
 
 
@@ -119,7 +127,7 @@ function getValueFromLastRecords(s) {
                                 (e) => { clampStepValueAndUpdate(e.target.value, e.target.id, e.target); }">
                             <option value="" v-show="getValueFromLastRecords(stage.id) == null">-</option>
                             <option v-for="rewardTier in stage.rewards"
-                                v-show="rewardTier.step >= getValueFromLastRecords(stage.id)" :value="rewardTier.step">
+                                v-show="rewardTier.step >= getPrevValueFromLastRecords(stage.id)" :value="rewardTier.step">
                                 {{ $t(appendGameToString(data.ranked_stages.progress_labels[rewardTier.step])) }}
                             </option>
                         </select>

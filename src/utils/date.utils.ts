@@ -71,6 +71,11 @@ export function getLastWeeklyResetDateNumber(gameName: string, fromDate: number)
     return dateToDateNumber(lastWeekly);
 }
 
+export function getNextWeeklyResetDateNumber(gameName: string, fromDate: number) {
+    let date = dateNumberToDate(fromDate);
+    return dateToDateNumber(getNextWeeklyResetTime(gameName, date));
+}
+
 function getLastPeriodicResetDate(resetDate: string, comparedDateNumber: number, resetPeriod: number) {
     let date = dateNumberToDate(comparedDateNumber);
     let resetDateArr = resetDate.split('-').map(x => Number.parseInt(x));
