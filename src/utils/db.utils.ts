@@ -305,6 +305,11 @@ async function createHistoryTable(db: Database, tableName: string) {
     )
 }
 
+async function createUserDataTable(db: Database, tableName: string) {
+    const res = await db.execute(
+        `CREATE TABLE IF NOT EXISTS ${tableName}(key TEXT, value TEXT)`
+    )
+}
 
 
 async function initalizeDB(db: Database) {
@@ -319,4 +324,6 @@ async function initalizeDB(db: Database) {
     createPremiumTable(db, "premium");
 
     createHistoryTable(db, "currencyHistory");
+
+    createUserDataTable(db, "userData");
 }

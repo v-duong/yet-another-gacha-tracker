@@ -10,7 +10,7 @@ import { getNextDailyResetTime } from '../utils/date.utils';
 <template>
     <ul class="game-list-parent">
         <li v-for="game in gameList.list" @click="{ sessionData.currentGameView = game.name; }">
-            <img :src=convertFileSrc(gameData[game.name].iconPath)></img>
+            <img :src="convertFileSrc(gameData[game.name].imagesPath + '/icon.png')" alt="icon"></img>
             <div class="game-info-container">
                 <p>{{ $t(`${game.name}.${gameData[game.name].config.name_key != null ?
                     gameData[game.name].config.name_key

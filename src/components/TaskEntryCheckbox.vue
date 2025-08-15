@@ -1,7 +1,7 @@
 <script setup>
-import { appendGameToString } from '../utils/gameData';
+import { appendGameToString, getCurrencyImage, imageExists } from '../utils/gameData';
 import { handleTaskRecordChange } from '../utils/helpers.utils';
-import  './style/TaskEntry.css'
+import './style/TaskEntry.css'
 const props = defineProps(['data', 'taskType', 'context']);
 
 let progress;
@@ -10,14 +10,20 @@ let progress;
 
 <template>
     <div class="task-entry-container flex-column">
-        <div class="task-entry flex-row">
+        <div class="task-entry flex-row align-items-center">
             <input class="task-checkbox" type="checkbox"
                 :checked="context.sessionData.cachedDays[context.date]?.getProgress(taskType, data.id)" :id="data.id"
                 @change="(e) => handleTaskRecordChange(context.gameName, taskType, context.date, data, e.target.checked ? 1 : 0)" />
             <p>{{ $t(`${appendGameToString(data.id)}`) }}</p>
             <div class="rewards-list">
                 <div class="reward-list-item" v-for="reward in data.rewards">
-                    <div>{{ reward.amount }} {{ $t(appendGameToString(reward.currency)) }}</div>
+                    <div class="currency-display">
+                        {{ reward.amount }}
+                        <img v-if="imageExists(context.gameName, reward.currency)" class="currency-image"
+                            :src="getCurrencyImage(context.gameName, reward.currency)"
+                            :alt="$t(appendGameToString(reward.currency))" />
+                        <div v-else> {{ $t(appendGameToString(reward.currency)) }}</div>
+                    </div>
                 </div>
             </div>
         </div>

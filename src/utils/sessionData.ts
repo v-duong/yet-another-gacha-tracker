@@ -359,6 +359,7 @@ export class DayData {
   weeklyProgress: { [key: string | number]: TrackedProgressData; } = {};
   periodicProgress: { [key: string | number]: TrackedProgressData; } = {};
   eventProgress: { [key: string | number]: TrackedProgressData; } = {};
+  premiumSource: { [key: string | number]: OtherEntry; } = {};
   otherSources: { [key: string | number]: OtherEntry; } = {};
   totals: { initial: CurrencyValue[], calculated: CurrencyHistory[], override: CurrencyValue[] } = { initial: [], calculated: [], override: [] };
   populated: boolean = false;

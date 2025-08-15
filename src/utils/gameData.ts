@@ -4,6 +4,7 @@ import { reactive } from 'vue';
 import { TrackerDatabase, loadDB } from './db.utils';
 import Database from '@tauri-apps/plugin-sql';
 import { sessionData } from './sessionData';
+import { convertFileSrc } from '@tauri-apps/api/core';
 
 export type GameTrackerConfig = {
   id: string;
@@ -18,8 +19,17 @@ export type GameTrackerConfig = {
   daily?: TrackedTask[];
   weekly?: TrackedTask[];
   periodic?: PeriodicTask[];
+  daily_currency_passes: CurrencyPass[];
 
-  [name:string]: any;
+  [name: string]: any;
+}
+
+export type CurrencyPass = {
+  id: string;
+  cost: number;
+  currencies: CurrencyValue[];
+  bonus: CurrencyValue[];
+  duration: number;
 }
 
 export type RegionData = {
@@ -76,10 +86,11 @@ export interface SteppedRewardEntry {
 
 export type GameDataEntry = {
   config: GameTrackerConfig;
-  iconPath: string;
+  imagesPath: string;
   localePath: string;
   db: TrackerDatabase;
-  trackedCurrencies : string[];
+  trackedCurrencies: string[];
+  currencyImages: { [key: string]: { exists: boolean, path: string } }
 }
 
 export type GameListEntry = {
@@ -93,8 +104,22 @@ export let gameList: { list: GameListEntry[] } = reactive({ list: [] });
 export async function addResourcesFromDir(gameDir: string) {
   const jsonString = await readTextFile(gameDir + "/data.json");
   const data: GameTrackerConfig = JSON.parse(jsonString);
-  gameData[data.id] = { config: data, iconPath: gameDir + "/images/icon.png", localePath: gameDir + "/i18n", db: new TrackerDatabase(await loadDB(data.id)), trackedCurrencies: [] };
-  //console.log(gameData)
+  gameData[data.id] = {
+    config: data,
+    imagesPath: gameDir + "/images",
+    localePath: gameDir + "/i18n",
+    db: new TrackerDatabase(await loadDB(data.id)),
+    trackedCurrencies: [],
+    currencyImages: {}
+  };
+}
+
+export function imageExists(gameName: string, currency: string) {
+  return gameData[gameName]?.currencyImages[currency]?.exists;
+}
+
+export function getCurrencyImage(gameName: string, currency: string) {
+  return gameData[gameName]?.currencyImages[currency]?.path;
 }
 
 export async function generateGameList() {
@@ -105,9 +130,14 @@ export async function generateGameList() {
     const game = gameData[gameName];
     tempList.push({ name: game.config.id, order: game.config.order != null ? game.config.order : 100 });
 
-    game.config.currencies.forEach(c => {
+    game.config.currencies.forEach(async c => {
       if (c.tracked)
         game.trackedCurrencies.push(c.id);
+
+      game.currencyImages[c.id] = {
+        exists: await exists(`${game.imagesPath}/${c.id}.png`),
+        path: convertFileSrc(`${game.imagesPath}/${c.id}.png`)
+      }
     })
   }
   tempList = tempList.sort((a, b) => a.name.localeCompare(b.name));
@@ -140,11 +170,11 @@ export async function initializeData() {
 }
 
 
-export function appendGameToString(key: string|number) {
+export function appendGameToString(key: string | number) {
   return `${sessionData.currentGameView}.${key}`
 }
 
-export function getPrimaryCurrency(gameName : string) {
-    let res = gameData[gameName].config.currencies.find(c => c.primary);
-    return res?.id;
+export function getPrimaryCurrency(gameName: string) {
+  let res = gameData[gameName].config.currencies.find(c => c.primary);
+  return res?.id;
 }

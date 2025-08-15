@@ -2,6 +2,7 @@
 import { gameData, appendGameToString } from '../utils/gameData';
 import { ref } from "vue";
 import { handleCurrencyHistoryChange } from '../utils/helpers.utils';
+import { getCurrencyImage, imageExists } from '../utils/gameData';
 
 const props = defineProps(['data', 'context']);
 
@@ -19,15 +20,19 @@ const isExpanded = ref(false);
                 <template v-for="currency in context.config.currencies">
                     <div v-if="currency.tracked" v-show="currency.primary || isExpanded"
                         class="summary-currency-list-entry flex-row">
-                        <div class="summary-currency-entry-name">{{ $t(appendGameToString(currency.id)) }}</div>
+                        <div class="summary-currency-entry-name">
+                            <img v-if="imageExists(context.gameName, currency.id)" class="currency-image" :src="getCurrencyImage(context.gameName, currency.id)"
+                                :alt="$t(appendGameToString(currency.id))" />
+                            <div v-else>{{ $t(appendGameToString(currency.id)) }}</div>
+                        </div>
                         <div class="summary-currency-entry-name"> {{
                             context.sessionData.cachedDays[context.date]?.getCurrencyInitialValues(currency.id) }} →
                         </div>
                         <input type="number" class="summary-currency-entry-input"
                             :class="{ overridden: context.sessionData.cachedDays[context.date]?.hasOverride() }"
                             :id="currency.id"
-                            :value="context.sessionData.cachedDays[context.date]?.getCurrencyValue(currency.id)" 
-                            @change="(e)=>handleCurrencyHistoryChange(context.gameName, context.date, currency.id, Number.parseInt(e.target.value))"/>
+                            :value="context.sessionData.cachedDays[context.date]?.getCurrencyValue(currency.id)"
+                            @change="(e) => handleCurrencyHistoryChange(context.gameName, context.date, currency.id, Number.parseInt(e.target.value))" />
                     </div>
                 </template>
             </div>
@@ -71,6 +76,7 @@ const isExpanded = ref(false);
 
 .summary-currency-list-entry {
     gap: 1em;
+    align-items: center;
 
     input {
         background-color: rgba(0, 0, 0, 0.2);

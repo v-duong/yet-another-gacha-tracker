@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { appendGameToString, SteppedRewardEntry } from '../utils/gameData';
+import { appendGameToString, SteppedRewardEntry, getCurrencyImage, imageExists } from '../utils/gameData';
 import { handleTaskRecordChange } from '../utils/helpers.utils';
 import { dateNumberToDate, getLastPeriodicResetDateNumber, getLastWeeklyResetDateNumber } from "../utils/date.utils";
 import './style/TaskEntry.css'
@@ -76,7 +76,7 @@ function clampStepValueAndUpdate() {
     if (stepValue.value > maxSteps)
         stepValue.value = maxSteps;
 
-        console.log(cachedValue, stepValue.value)
+    console.log(cachedValue, stepValue.value)
     if (cachedValue != stepValue.value) {
         handleTaskRecordChange(props.context.gameName, props.taskType, props.context.date, props.data, stepValue.value);
         cachedValue = stepValue.value;
@@ -89,7 +89,7 @@ function clampStepValueAndUpdate() {
 
 <template>
     <div class="task-entry-container flex-column">
-        <div class="task-entry flex-row">
+        <div class="task-entry flex-row align-items-center">
             <div class="stepped-counter flex-row">
                 <button @click="decrement">-</button>
                 <input type="number" class="step-input" v-model="stepValue" :id="data.id" @change="// @ts-ignore 
@@ -100,15 +100,19 @@ function clampStepValueAndUpdate() {
             <p>{{ $t(appendGameToString(data.id)) }}</p>
             <div class="rewards-list">
                 <div class="reward-list-item">
-                    <div v-for="(value, currency) in getTotalFromStepped(data.stepped_rewards)">
-                        {{ value }} {{
-                            $t(appendGameToString(currency))
-                        }}</div>
+                    <div v-for="(value, currency) in getTotalFromStepped(data.stepped_rewards)"
+                        class="currency-display">
+                        {{ value }}
+                        <img v-if="imageExists(context.gameName, currency)" class="currency-image"
+                            :src="getCurrencyImage(context.gameName, currency)"
+                            :alt="$t(appendGameToString(currency))" />
+                        <div v-else> {{ $t(appendGameToString(currency)) }} </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div v-show="lastRecords.highestDate != 0"> Previous record: {{ lastRecords.highest }} on {{
-            dateNumberToDate(lastRecords.highestDate).toISOString().slice(0,10) }}</div>
+            dateNumberToDate(lastRecords.highestDate).toISOString().slice(0, 10) }}</div>
     </div>
 
 </template>

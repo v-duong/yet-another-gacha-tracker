@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { appendGameToString } from '../utils/gameData';
+import { appendGameToString, getCurrencyImage, imageExists } from '../utils/gameData';
 import { handleRankedStageRecordChange } from '../utils/helpers.utils';
 import { getLastPeriodicResetDateNumber, getLastWeeklyResetDateNumber, getNextPeriodicResetTime } from "../utils/date.utils";
 import './style/TaskEntry.css'
@@ -53,7 +53,7 @@ watch(() => [props.context.date, props.context.sessionData], () => {
     for (const key in rankedProgressObj) {
         lastRecords.value[key].current = rankedProgressObj[key];
     }
-}, { immediate: true, deep:4 })
+}, { immediate: true, deep: 4 })
 
 function getTotalFromStepped(stepped_rewards_array) {
     let resObj = {};
@@ -115,7 +115,7 @@ function getPrevValueFromLastRecords(s) {
     <div class="task-entry-container flex-column">
         <div class="stage-header flex-row">
             <div>{{ $t(appendGameToString(data.id)) }}</div>
-            <Countdown v-if="taskType == 'periodic'" :date="resetTime"/>
+            <Countdown v-if="taskType == 'periodic'" :date="resetTime" />
         </div>
         <div class="stage-list flex-row">
             <template v-for="stage in data.ranked_stages.stages">
@@ -127,15 +127,21 @@ function getPrevValueFromLastRecords(s) {
                                 (e) => { clampStepValueAndUpdate(e.target.value, e.target.id, e.target); }">
                             <option value="" v-show="getValueFromLastRecords(stage.id) == null">-</option>
                             <option v-for="rewardTier in stage.rewards"
-                                v-show="rewardTier.step >= getPrevValueFromLastRecords(stage.id)" :value="rewardTier.step">
+                                v-show="rewardTier.step >= getPrevValueFromLastRecords(stage.id)"
+                                :value="rewardTier.step">
                                 {{ $t(appendGameToString(data.ranked_stages.progress_labels[rewardTier.step])) }}
                             </option>
                         </select>
                     </div>
                     <div class="rewards-list">
                         <div class="reward-list-item">
-                            <div v-for="(value, currency) in getTotalFromStepped(stage.rewards)">
-                                {{ value }} {{ $t(appendGameToString(currency)) }}</div>
+                            <div v-for="(value, currency) in getTotalFromStepped(stage.rewards)"
+                                class="currency-display">
+                                {{ value }}
+                                <img v-if="imageExists(context.gameName, currency)" class="currency-image" :src="getCurrencyImage(context.gameName, currency)"
+                                    :alt="$t(appendGameToString(currency))" />
+                                <div v-else> {{ $t(appendGameToString(currency)) }} </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -149,45 +155,17 @@ function getPrevValueFromLastRecords(s) {
     justify-content: space-between;
     font-weight: bold;
     padding-bottom: 1em;
+
+}
+
+.stage-list {
+    flex-wrap: wrap;
+    gap: 0.33em;
 }
 
 .stage-list-entry {
     gap: 0.5em;
     flex-grow: 1;
-}
-
-.stepped-counter {
-    gap: 0.33em;
-    align-items: center;
-
-    button {
-        background-color: var(--background-color-highlight);
-        border: none;
-        width: 1.15em;
-        height: 1.15em;
-    }
-
-    .step-input {
-        width: 2.5em;
-        background-color: rgba(0, 0, 0, 0.33);
-        border: none;
-        text-align: center;
-        color: var(--main-text-color);
-    }
-
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-
-    input[type=number] {
-        -moz-appearance: textfield;
-        appearance: textfield;
-    }
-
-    div {
-        text-wrap-mode: nowrap;
-    }
+    padding-bottom: 0.75em;
 }
 </style>

@@ -63,15 +63,20 @@
   "daily_currency_passes": [
     {
       "id": "daily_polychrome_membership",
-      "currency": "polychrome",
+      "currencies": [
+        {
+          "currency": "polychrome",
+          "amount": 90
+        }
+      ],
       "cost": 4.99,
-      "amount": 90,
       "bonus": [
         {
           "currency": "monochrome",
           "amount": 300
         }
-      ]
+      ],
+      "duration": 30
     }
   ],
   "regions": [
@@ -183,7 +188,7 @@
   "periodic": [
     {
       "id": "shiyu_defense",
-      "reset_day":"2025-08-15",
+      "reset_day": "2025-08-15",
       "reset_period": 14,
       "ranked_stages": {
         "progress_labels": [
