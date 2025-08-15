@@ -1,14 +1,15 @@
 <script setup>
 import { gameData, getPrimaryCurrency } from '../utils/gameData';
 import { sessionData } from '../utils/sessionData';
-import TaskBox from './TaskBox.vue';
-import SessionSummaryBar from './SessionSummaryBar.vue';
 import { ref, watch } from 'vue';
 import { updateGameView } from '../utils/helpers.utils';
+import TaskBox from './TaskBox.vue';
+import SessionSummaryBar from './SessionSummaryBar.vue';
 import DayNav from './DayNav.vue';
 import LineChart from './LineChart.vue';
+import PremiumItemBox from './PremiumItemBox.vue';
 
-const currentContext = ref({gameName: "",config: {},sessionData: {},date:""})
+const currentContext = ref({ gameName: "", config: {}, sessionData: {}, date: "" })
 
 await updateCurrent();
 
@@ -34,16 +35,22 @@ async function updateCurrent() {
         :style="{ '--accent-color': currentContext.config?.accent_color != null ? currentContext.config?.accent_color : '', '--accent-font-color': currentContext.config?.accent_font_color != null ? currentContext.config?.accent_font_color : '' }">
         <div class="top-bar flex-row">
             <div>{{ $t(currentContext.gameName + '.game_title') }}</div>
-            <DayNav :context="currentContext" :updateCallback="async ()=> updateGameView(currentContext.gameName)"></DayNav>
+            <DayNav :context="currentContext" :updateCallback="async () => updateGameView(currentContext.gameName)">
+            </DayNav>
         </div>
         <div class="chart-parent">
-        <LineChart :context="currentContext" :currency="getPrimaryCurrency(currentContext.gameName)"></LineChart>
+            <LineChart :context="currentContext" :currency="getPrimaryCurrency(currentContext.gameName)"></LineChart>
         </div>
         <div class="task-container">
-            <TaskBox v-if="currentContext.config?.daily != null" id="daily-tasks" :name="'daily'" :context="currentContext" :data="currentContext.config?.daily" />
-            <TaskBox v-if="currentContext.config?.weekly != null" id="weekly-tasks" :name="'weekly'" :context="currentContext" :data="currentContext.config?.weekly" />
-            <TaskBox v-if="currentContext.config?.periodic != null" id="periodic-tasks" :name="'periodic'" :context="currentContext" :data="currentContext.config?.periodic" />
-            <TaskBox v-if="currentContext.config?.event != null" id="event-tasks" :name="'event'" :context="currentContext" :data="currentContext.config?.event" />
+            <TaskBox v-if="currentContext.config?.daily != null" id="daily-tasks" :name="'daily'"
+                :context="currentContext" :data="currentContext.config?.daily" />
+            <TaskBox v-if="currentContext.config?.weekly != null" id="weekly-tasks" :name="'weekly'"
+                :context="currentContext" :data="currentContext.config?.weekly" />
+            <PremiumItemBox id="premium-items" :name="'premium'" :context="currentContext" />
+            <TaskBox v-if="currentContext.config?.periodic != null" id="periodic-tasks" :name="'periodic'"
+                :context="currentContext" :data="currentContext.config?.periodic" />
+            <TaskBox v-if="currentContext.config?.event != null" id="event-tasks" :name="'event'"
+                :context="currentContext" :data="currentContext.config?.event" />
         </div>
         <SessionSummaryBar :context="currentContext" />
     </div>

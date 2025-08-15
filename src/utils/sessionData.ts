@@ -37,6 +37,7 @@ export class GameSession {
     const eventRecords = await db.getAllEventRecord(date, region);
     const otherRecords = await db.getAllOtherRecord(date, region);
     const historyRecord = await db.getCurrencyHistory(date, region);
+    const premiumRecords = await db.getAllPremiumRecord(date, region);
 
     dailyRecords?.forEach((record) => this.fillRecord(record, 'dailyProgress'));
     weeklyRecords?.forEach((record) => this.fillRecord(record, 'weeklyProgress'));
@@ -52,6 +53,10 @@ export class GameSession {
 
     this.fillHistoryRecord(historyRecord);
     await this.fillRankedStageRecord(config, date, date);
+
+    premiumRecords?.forEach((record) => {
+      this.cachedDays[record.date].premiumSources.push(record);
+    })
 
     return selectedDay;
   }
@@ -77,6 +82,7 @@ export class GameSession {
     const eventRecords = await db.getAllEventRecordForRange(date_start, date_end, region);
     const otherRecords = await db.getAllOtherRecordForRange(date_start, date_end, region);
     const historyRecord = await db.getCurrencyHistoryForRange(date_start, date_end, region);
+    const premiumRecords = await db.getAllPremiumRecordForRange(date_start, date_end, region);
 
     dailyRecords?.forEach((record) => this.fillRecord(record, 'dailyProgress'));
     weeklyRecords?.forEach((record) => this.fillRecord(record, 'weeklyProgress'));
@@ -91,6 +97,15 @@ export class GameSession {
     this.fillHistoryRecord(historyRecord);
 
     await this.fillRankedStageRecord(config, date_start, date_end);
+
+    premiumRecords?.forEach((record) => {
+      let found = this.cachedDays[record.date].premiumSources.find(x=>x.id == record.id);
+      if (found)
+        return;
+      this.cachedDays[record.date].premiumSources.push(record);
+    })
+
+    
   }
 
   private async fillRankedStageRecord(config: GameTrackerConfig, date_start: number, date_end: number) {
@@ -264,7 +279,7 @@ export class GameSession {
 
       if (progressData.value < value) {
         progressData.value = value;
-      } 
+      }
 
       sumCurrenciesforSteppedRewards(data, value, progressData.value, this.gameName, currencies);
 
@@ -343,24 +358,30 @@ export class GameSession {
   }
 }
 
-export class TrackedProgressData {
-  value: number = 0;
-  rankedStageValues: { [key: string]: number } = {};
+export class SessionRecord {
+  notes: string = "";
   currencies: CurrencyValue[] = [];
 }
 
-export type OtherEntry = {
-  notes: string;
-  currencies: CurrencyValue[];
-};
+export class TrackedProgressData extends SessionRecord {
+  value: number = 0;
+  rankedStageValues: { [key: string]: number } = {};
+}
+
+export class PremiumEntry extends SessionRecord {
+  id: number = 0;
+  name: string = "";
+  category: string = "";
+  spending: number = 0;
+}
 
 export class DayData {
   dailyProgress: { [key: string | number]: TrackedProgressData; } = {};
   weeklyProgress: { [key: string | number]: TrackedProgressData; } = {};
   periodicProgress: { [key: string | number]: TrackedProgressData; } = {};
   eventProgress: { [key: string | number]: TrackedProgressData; } = {};
-  premiumSource: { [key: string | number]: OtherEntry; } = {};
-  otherSources: { [key: string | number]: OtherEntry; } = {};
+  premiumSources: PremiumEntry[] = [];
+  otherSources: { [key: string | number]: SessionRecord; } = {};
   totals: { initial: CurrencyValue[], calculated: CurrencyHistory[], override: CurrencyValue[] } = { initial: [], calculated: [], override: [] };
   populated: boolean = false;
 
@@ -389,7 +410,7 @@ export class DayData {
         return this.periodicProgress[taskId] ? this.periodicProgress[taskId].value : 0;
       case 'event':
         if (this.eventProgress[taskId] == null) return null;
-        return this.eventProgress[taskId] ? this.periodicProgress[taskId].value : 0;
+        return this.eventProgress[taskId] ? this.eventProgress[taskId].value : 0;
       case 'other':
         if (this.otherSources[taskId] == null) return null;
         return this.otherSources[taskId];
@@ -479,10 +500,64 @@ export class DayData {
     this.calculateGainFromTasks();
   }
 
+  getPremiumRecord(id: number, name: string, category: string) {
+    if (this.premiumSources == null)
+      return null;
+
+    let res = this.premiumSources.find(x => {
+      if (x.id == id && x.category == category && x.name == name)
+        return true;
+      else if (x.category == 'currency_pass' && x.name == name)
+        return true;
+      else
+        return false;
+    })
+
+    return res;
+  }
+
+  addPremiumRecord(name: string, category: string, currencies: CurrencyValue[], spending: number) {
+    let record = new PremiumEntry();
+
+    record.id = this.premiumSources.reduce((prev, curr) => { return Math.max(prev, curr.id) }, 0) + 1;
+    record.name = name.slice(0, 128);
+    record.category = category;
+    record.currencies = currencies;
+    record.spending = spending;
+
+    this.premiumSources.push(record);
+    this.calculateGainFromTasks();
+
+    return record;
+  }
+
+  deletePremiumRecord(id: number, name: string, category: string) {
+    if (this.premiumSources == null)
+      return false;
+
+    let record = this.getPremiumRecord(id, name, category);
+
+    if (record == null)
+      return false;
+
+    let index = this.premiumSources.indexOf(record);
+    let res = this.premiumSources.splice(index,1);
+
+    this.calculateGainFromTasks();
+
+    return res;
+  }
+
   getCurrencyInitialValues(currency: string) {
     let r = findCurrencyRecord(this.totals.initial, currency);
     return r ? r.amount : 0;
   }
+
+  getCurrencyGainValues(currency: string) {
+    let r = findCurrencyRecord(this.totals.calculated, currency) as CurrencyHistory;
+    return r ? r.gain : 0;
+  }
+
 
   getCurrencyValue(currency: string) {
     let r = this.totals.override.find(x => x.currency == currency);
@@ -522,6 +597,14 @@ export class DayData {
 
     for (let key in this.eventProgress) {
       addTaskToTotals(this.eventProgress[key].currencies);
+    }
+
+    for (let key in this.premiumSources) {
+      addTaskToTotals(this.premiumSources[key].currencies);
+    }
+
+    for (let key in this.otherSources) {
+      addTaskToTotals(this.otherSources[key].currencies);
     }
   }
 

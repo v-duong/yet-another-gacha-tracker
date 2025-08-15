@@ -202,15 +202,6 @@
             "id": "shiyu_defense_1",
             "rewards": [
               {
-                "step": 0,
-                "currencies": [
-                  {
-                    "currency": "polychrome",
-                    "amount": 30
-                  }
-                ]
-              },
-              {
                 "step": 1,
                 "currencies": [
                   {
@@ -221,6 +212,15 @@
               },
               {
                 "step": 2,
+                "currencies": [
+                  {
+                    "currency": "polychrome",
+                    "amount": 30
+                  }
+                ]
+              },
+              {
+                "step": 3,
                 "currencies": [
                   {
                     "currency": "polychrome",
@@ -234,15 +234,6 @@
             "id": "shiyu_defense_2",
             "rewards": [
               {
-                "step": 0,
-                "currencies": [
-                  {
-                    "currency": "polychrome",
-                    "amount": 30
-                  }
-                ]
-              },
-              {
                 "step": 1,
                 "currencies": [
                   {
@@ -253,6 +244,15 @@
               },
               {
                 "step": 2,
+                "currencies": [
+                  {
+                    "currency": "polychrome",
+                    "amount": 30
+                  }
+                ]
+              },
+              {
+                "step": 3,
                 "currencies": [
                   {
                     "currency": "polychrome",
@@ -266,15 +266,6 @@
             "id": "shiyu_defense_3",
             "rewards": [
               {
-                "step": 0,
-                "currencies": [
-                  {
-                    "currency": "polychrome",
-                    "amount": 30
-                  }
-                ]
-              },
-              {
                 "step": 1,
                 "currencies": [
                   {
@@ -285,6 +276,15 @@
               },
               {
                 "step": 2,
+                "currencies": [
+                  {
+                    "currency": "polychrome",
+                    "amount": 30
+                  }
+                ]
+              },
+              {
+                "step": 3,
                 "currencies": [
                   {
                     "currency": "polychrome",
@@ -298,15 +298,6 @@
             "id": "shiyu_defense_4",
             "rewards": [
               {
-                "step": 0,
-                "currencies": [
-                  {
-                    "currency": "polychrome",
-                    "amount": 30
-                  }
-                ]
-              },
-              {
                 "step": 1,
                 "currencies": [
                   {
@@ -317,6 +308,15 @@
               },
               {
                 "step": 2,
+                "currencies": [
+                  {
+                    "currency": "polychrome",
+                    "amount": 30
+                  }
+                ]
+              },
+              {
+                "step": 3,
                 "currencies": [
                   {
                     "currency": "polychrome",
@@ -330,15 +330,6 @@
             "id": "shiyu_defense_5",
             "rewards": [
               {
-                "step": 0,
-                "currencies": [
-                  {
-                    "currency": "polychrome",
-                    "amount": 40
-                  }
-                ]
-              },
-              {
                 "step": 1,
                 "currencies": [
                   {
@@ -349,6 +340,15 @@
               },
               {
                 "step": 2,
+                "currencies": [
+                  {
+                    "currency": "polychrome",
+                    "amount": 40
+                  }
+                ]
+              },
+              {
+                "step": 3,
                 "currencies": [
                   {
                     "currency": "polychrome",
@@ -362,15 +362,6 @@
             "id": "shiyu_defense_6",
             "rewards": [
               {
-                "step": 0,
-                "currencies": [
-                  {
-                    "currency": "polychrome",
-                    "amount": 40
-                  }
-                ]
-              },
-              {
                 "step": 1,
                 "currencies": [
                   {
@@ -381,6 +372,15 @@
               },
               {
                 "step": 2,
+                "currencies": [
+                  {
+                    "currency": "polychrome",
+                    "amount": 40
+                  }
+                ]
+              },
+              {
+                "step": 3,
                 "currencies": [
                   {
                     "currency": "polychrome",
@@ -394,15 +394,6 @@
             "id": "shiyu_defense_7",
             "rewards": [
               {
-                "step": 0,
-                "currencies": [
-                  {
-                    "currency": "polychrome",
-                    "amount": 40
-                  }
-                ]
-              },
-              {
                 "step": 1,
                 "currencies": [
                   {
@@ -413,6 +404,15 @@
               },
               {
                 "step": 2,
+                "currencies": [
+                  {
+                    "currency": "polychrome",
+                    "amount": 40
+                  }
+                ]
+              },
+              {
+                "step": 3,
                 "currencies": [
                   {
                     "currency": "polychrome",

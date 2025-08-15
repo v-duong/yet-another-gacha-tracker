@@ -3,9 +3,6 @@ import { appendGameToString, getCurrencyImage, imageExists } from '../utils/game
 import { handleTaskRecordChange } from '../utils/helpers.utils';
 import './style/TaskEntry.css'
 const props = defineProps(['data', 'taskType', 'context']);
-
-let progress;
-
 </script>
 
 <template>
@@ -14,7 +11,7 @@ let progress;
             <input class="task-checkbox" type="checkbox"
                 :checked="context.sessionData.cachedDays[context.date]?.getProgress(taskType, data.id)" :id="data.id"
                 @change="(e) => handleTaskRecordChange(context.gameName, taskType, context.date, data, e.target.checked ? 1 : 0)" />
-            <p>{{ $t(`${appendGameToString(data.id)}`) }}</p>
+            <p>{{ $t(appendGameToString(data.id)) }}</p>
             <div class="rewards-list">
                 <div class="reward-list-item" v-for="reward in data.rewards">
                     <div class="currency-display">

@@ -91,20 +91,20 @@ function clampStepValueAndUpdate(step, id, source) {
 
 function getValueFromLastRecords(s) {
     if (lastRecords.value == null)
-        return null;
+        return 0;
 
     if (lastRecords.value[s].current != null)
         return lastRecords.value[s].current;
 
-    return lastRecords.value[s].prev;
+    return lastRecords.value[s].prev ? lastRecords.value[s].prev : 0;
 }
 
 
 function getPrevValueFromLastRecords(s) {
     if (lastRecords.value == null)
-        return null;
+        return 0;
 
-    return lastRecords.value[s].prev;
+    return lastRecords.value[s].prev ? lastRecords.value[s].prev : 0;
 }
 
 
@@ -125,11 +125,11 @@ function getPrevValueFromLastRecords(s) {
                         <select class="stage-reward-dropdown" :id="stage.id" :value="getValueFromLastRecords(stage.id)"
                             :key="lastRecords.value" @change="
                                 (e) => { clampStepValueAndUpdate(e.target.value, e.target.id, e.target); }">
-                            <option value="" v-show="getValueFromLastRecords(stage.id) == null">-</option>
+                            <option value="0" v-show="getPrevValueFromLastRecords(stage.id) == 0">-</option>
                             <option v-for="rewardTier in stage.rewards"
                                 v-show="rewardTier.step >= getPrevValueFromLastRecords(stage.id)"
                                 :value="rewardTier.step">
-                                {{ $t(appendGameToString(data.ranked_stages.progress_labels[rewardTier.step])) }}
+                                {{ $t(appendGameToString(data.ranked_stages.progress_labels[rewardTier.step-1]))  }} {{ rewardTier.step }}
                             </option>
                         </select>
                     </div>

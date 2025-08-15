@@ -1,5 +1,5 @@
 import { CurrencyValue, gameData, PeriodicTask, SteppedRewardEntry, TrackedTask } from "./gameData";
-import { sessionData, GameSession } from './sessionData';
+import { sessionData, GameSession, PremiumEntry } from './sessionData';
 import { CurrencyHistory, TrackerDatabase } from "./db.utils";
 import { getLastWeeklyResetDateNumber, getCurrentDateNumberForGame, getDateNumberWithOffset, getLastPeriodicResetDateNumber, getNextWeeklyResetDateNumber, getNextPeriodicResetDateNumber } from "./date.utils";
 
@@ -108,8 +108,6 @@ export async function handleRankedStageRecordChange(gameName: string, taskType: 
 
     let recordsToUpdate = await session.adjustCurrentHistoryRetroactive(date);
 
-    console.log(currencies);
-
     debounce(data.id, () => {
         gameData[gameName].db.insertTaskRecord(taskType, date, session.lastSelectedRegion.id, data.id, stagesSum, currencies, "");
         gameData[gameName].db.insertRankedStageRecord(date, session.lastSelectedRegion.id, data.id, id, value);
@@ -118,6 +116,22 @@ export async function handleRankedStageRecordChange(gameName: string, taskType: 
     });
 
     return currencies;
+}
+
+export async function updatePremiumRecord(gameName: string, date: number, record: PremiumEntry) {
+    const session = sessionData.cachedGameSession[gameName];
+
+    debounce(record.id.toString(), () => {
+        gameData[gameName].db.insertPremiumRecord(date, session.lastSelectedRegion.id, record.id, record.name, record.category, record.spending, record.currencies, record.notes);
+    });
+}
+
+export async function removePremiumRecord(gameName: string, date: number, record: PremiumEntry) {
+    const session = sessionData.cachedGameSession[gameName];
+
+    debounce(record.id.toString(), () => {
+        gameData[gameName].db.deletePremiumRecord(date, session.lastSelectedRegion.id, record.id, record.name, record.category);
+    });
 }
 
 function sumCurrenciesForRankedStages(data: TrackedTask, currentProgress: { [key: string]: number; }, compareValues: { [key: string]: number; } | null, gameName: string, currencies: CurrencyValue[]) {

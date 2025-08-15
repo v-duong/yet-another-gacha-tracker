@@ -82,7 +82,7 @@ function getLastPeriodicResetDate(resetDate: string, comparedDateNumber: number,
     let referenceDate = new Date(resetDateArr[0], resetDateArr[1] - 1, resetDateArr[2])
     let difference = referenceDate.getTime() - date.getTime();
     let days = millisecondsToHours(difference) / 24;
-    let daysToLastPeriodic = (resetPeriod - days) % resetPeriod;
+    let daysToLastPeriodic = (resetPeriod - days % resetPeriod) % resetPeriod;
     return add(date, { days: -daysToLastPeriodic });
 }
 

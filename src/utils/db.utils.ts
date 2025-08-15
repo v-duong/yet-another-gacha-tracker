@@ -213,6 +213,60 @@ export class TrackerDatabase {
         }
     }
 
+    async getAllPremiumRecordForRange(date_start:number, date_end:number, region:string) {
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM premium WHERE date>=${date_start} AND date <= ${date_end} AND region='${region}'`);
+
+        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies);  });
+
+        if (existingRecord.length > 0)
+            return existingRecord;
+        else
+            return null;
+    }
+
+    async getAllPremiumRecord(date:number, region:string) {
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM premium WHERE date=${date} AND region='${region}'`);
+
+        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies); });
+
+        if (existingRecord.length > 0)
+            return existingRecord;
+        else
+            return null;
+    }
+
+    async getPremiumRecord(date:number, region:string, id: number, name:string, category:string) {
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM premium WHERE date=${date} AND region='${region}' AND id='${id}' AND name='${name}' AND category='${category}'`);
+
+        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies); });
+
+        if (existingRecord.length > 0)
+            return existingRecord;
+        else
+            return null;
+    }
+
+    async insertPremiumRecord(date: number, region: string, id: number, name:string, category:string, spending:number, currencies:CurrencyValue[], notes:string = "") {
+        const existingRecord = await this.getPremiumRecord(date, region, id, name, category);
+
+        if (existingRecord == null)
+            await this.db.execute(
+                `INSERT into premium(date, region, id, name, category, spending, currencies, notes) VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
+                [date, region, id, name, category, spending, currencies, notes],
+            )
+        else {
+            await this.db.execute(
+                `UPDATE premium SET name=$1, spending=$2, currencies=$3, notes=$4 WHERE date=${date} AND region='${region}' AND id='${id}' AND category='${category}'`,
+                [name, spending, currencies, notes],
+            )
+        }
+    }
+
+    async deletePremiumRecord(date:number, region:string, id: number, name:string, category:string) {
+        const res: [...any] = await this.db.select(`DELETE FROM premium WHERE date=${date} AND region='${region}' AND id='${id}' AND name='${name}' AND category='${category}'`);
+
+        console.log(res)
+    }
 }
 
 export type TaskRecord = {
