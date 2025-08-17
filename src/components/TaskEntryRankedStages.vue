@@ -41,13 +41,13 @@ watch(() => [props.context.date, props.context.sessionData], () => {
     resetTime = getNextPeriodicResetTime(props.context.gameName, props.data.reset_day, props.context.date, props.data.reset_period);
 
     let res = props.context.sessionData.getHighestProgressForRankedStagesinRange(props.taskType, props.data, resetDay, props.context.date);
-    let prevProgress = res[0];
-
-    highestDate = res[1];
+    let prevProgress = res;
 
     for (const key in prevProgress) {
-        lastRecords.value[key].prev = prevProgress[key];
-        lastRecords.value[key].current = prevProgress[key];
+        lastRecords.value[key].prev = prevProgress[key].value;
+        lastRecords.value[key].current = prevProgress[key].value;
+
+        lastRecords.value[key].date = prevProgress[key].highestDate;
     }
 
     for (const key in rankedProgressObj) {
@@ -99,12 +99,18 @@ function getValueFromLastRecords(s) {
     return lastRecords.value[s].prev ? lastRecords.value[s].prev : 0;
 }
 
-
 function getPrevValueFromLastRecords(s) {
     if (lastRecords.value == null)
         return 0;
 
     return lastRecords.value[s].prev ? lastRecords.value[s].prev : 0;
+}
+
+function getOldDateFromLastRecords(s) {
+    if (lastRecords.value == null)
+        return 0;
+
+    return lastRecords.value[s].date ? lastRecords.value[s].date : 0;
 }
 
 
@@ -123,13 +129,14 @@ function getPrevValueFromLastRecords(s) {
                     <div>{{ $t(appendGameToString(stage.id)) }}</div>
                     <div class="stepped-counter flex-row">
                         <select class="stage-reward-dropdown" :id="stage.id" :value="getValueFromLastRecords(stage.id)"
-                            :key="lastRecords.value" @change="
-                                (e) => { clampStepValueAndUpdate(e.target.value, e.target.id, e.target); }">
+                            :key="lastRecords.value" :class="{ 'old-record': getOldDateFromLastRecords(stage.id) ? true : false}"
+                            @change="(e) => { clampStepValueAndUpdate(e.target.value, e.target.id, e.target); }">
                             <option value="0" v-show="getPrevValueFromLastRecords(stage.id) == 0">-</option>
                             <option v-for="rewardTier in stage.rewards"
                                 v-show="rewardTier.step >= getPrevValueFromLastRecords(stage.id)"
                                 :value="rewardTier.step">
-                                {{ $t(appendGameToString(data.ranked_stages.progress_labels[rewardTier.step-1]))  }} {{ rewardTier.step }}
+                                {{ $t(appendGameToString(data.ranked_stages.progress_labels[rewardTier.step - 1])) }} {{
+                                rewardTier.step }}
                             </option>
                         </select>
                     </div>
@@ -138,7 +145,8 @@ function getPrevValueFromLastRecords(s) {
                             <div v-for="(value, currency) in getTotalFromStepped(stage.rewards)"
                                 class="currency-display">
                                 {{ value }}
-                                <img v-if="imageExists(context.gameName, currency)" class="currency-image" :src="getCurrencyImage(context.gameName, currency)"
+                                <img v-if="imageExists(context.gameName, currency)" class="currency-image"
+                                    :src="getCurrencyImage(context.gameName, currency)"
                                     :alt="$t(appendGameToString(currency))" />
                                 <div v-else> {{ $t(appendGameToString(currency)) }} </div>
                             </div>
@@ -167,5 +175,9 @@ function getPrevValueFromLastRecords(s) {
     gap: 0.5em;
     flex-grow: 1;
     padding-bottom: 0.75em;
+}
+
+.old-record {
+    background-color: var(--background-color-highlight);
 }
 </style>

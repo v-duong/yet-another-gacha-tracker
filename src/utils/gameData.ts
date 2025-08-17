@@ -79,6 +79,15 @@ export interface CurrencyValue {
   amount: number;
 }
 
+
+export function isEmptyCurrencyArray(currencies: CurrencyValue[]) {
+  for (let key in currencies) {
+    if (currencies[key].amount > 0)
+      return false;
+  }
+  return true;
+}
+
 export interface SteppedRewardEntry {
   step: number;
   currencies: CurrencyValue[];

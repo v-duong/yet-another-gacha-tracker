@@ -1,7 +1,7 @@
 import { appConfigDir } from '@tauri-apps/api/path';
 import { exists, mkdir } from '@tauri-apps/plugin-fs';
 import Database from '@tauri-apps/plugin-sql';
-import { CurrencyValue } from './gameData';
+import { CurrencyValue, isEmptyCurrencyArray } from './gameData';
 import { DayData } from './sessionData';
 import { taskTypeToProgressName } from './helpers.utils';
 
@@ -69,33 +69,59 @@ export class TrackerDatabase {
             return null;
     }
 
-    async insertTaskRecord(taskType: string, date: number, region: string, taskId: string, value: number | boolean, currencies: {}, notes: string) {
+    async insertTaskRecord(taskType: string, date: number, region: string, taskId: string, value: number | boolean, currencies: CurrencyValue[], notes: string) {
         const existingRecord = await this.getTaskRecord(taskType, date, region, taskId);
 
-        if (existingRecord == null)
+        if (existingRecord == null) {
+            if (value == 0 && notes == '' && isEmptyCurrencyArray(currencies)) return;
+
             await this.db.execute(
                 `INSERT into ${taskType}(date, region, name, value, currencies, notes) VALUES($1, $2, $3, $4, $5, $6)`,
                 [date, region, taskId, value, currencies, notes],
             )
+        }
         else {
             if (existingRecord.value == value && existingRecord.notes == notes) {
                 return;
             }
-            await this.db.execute(
-                `UPDATE ${taskType} SET value=$1, currencies=$2, notes=$3 WHERE date=${date} AND region='${region}' AND name='${taskId}'`,
-                [value, currencies, notes],
-            )
+
+            if (value == 0 && notes == '' && isEmptyCurrencyArray(currencies)) {
+                await this.db.execute(
+                    `DELETE FROM ${taskType} WHERE date=${date} AND region='${region}' AND name='${taskId}'`
+                )
+            } else {
+
+                await this.db.execute(
+                    `UPDATE ${taskType} SET value=$1, currencies=$2, notes=$3 WHERE date=${date} AND region='${region}' AND name='${taskId}'`,
+                    [value, currencies, notes],
+                )
+            }
         }
     }
 
-    
+
     async updateTaskRecordsForRange(dates: number[], targets: { [key: number]: DayData }, region: string, taskType: string, taskId: string) {
+        let skipUpdate: number[] = [];
         dates.forEach(d => {
             const target = targets[d];
             const memberName = taskTypeToProgressName(taskType);
+
+            if (target[memberName][taskId].value == 0) {
+                if (isEmptyCurrencyArray(target[memberName][taskId].currencies)) {
+                    skipUpdate.push(d);
+                    return;
+                }
+            }
+
             this.db.execute(
                 `UPDATE ${taskType} SET  value=$1, currencies=$2 WHERE date=${d} AND region='${region}' AND name='${taskId}'`,
                 [target[memberName][taskId].value, target[memberName][taskId].currencies],
+            )
+        })
+
+        skipUpdate.forEach(d => {
+            this.db.execute(
+                `DELETE FROM ${taskType} WHERE date=${d} AND region='${region}' AND name='${taskId}'`
             )
         })
     }
@@ -200,23 +226,34 @@ export class TrackerDatabase {
     async insertRankedStageRecord(date: number, region: string, parent_task: string, stage_name: string, value: number, score: number = 0, notes: string = "") {
         const existingRecord = await this.getRankedStageRecord(date, region, parent_task, stage_name);
 
-        if (existingRecord == null)
+        if (existingRecord == null) {
+            if (value == 0 && score == 0)
+                return;
+
             await this.db.execute(
                 `INSERT into ranked_stages(date, region, parent_task, stage_name, value, score, notes) VALUES($1, $2, $3, $4, $5, $6, $7)`,
                 [date, region, parent_task, stage_name, value, score, notes],
             )
+        }
         else {
-            await this.db.execute(
-                `UPDATE ranked_stages SET value=$1, score=$2, notes=$3 WHERE date=${date} AND region='${region}' AND parent_task='${parent_task}' AND stage_name='${stage_name}'`,
-                [value, score, notes],
-            )
+            if (value == 0 && score == 0) {
+                await this.db.execute(
+                    `DELETE FROM ranked_stages WHERE date=${date} AND region='${region}' AND parent_task='${parent_task}' AND stage_name='${stage_name}'`,
+                    [value, score, notes],
+                )
+            } else {
+                await this.db.execute(
+                    `UPDATE ranked_stages SET value=$1, score=$2, notes=$3 WHERE date=${date} AND region='${region}' AND parent_task='${parent_task}' AND stage_name='${stage_name}'`,
+                    [value, score, notes],
+                )
+            }
         }
     }
 
-    async getAllPremiumRecordForRange(date_start:number, date_end:number, region:string) {
+    async getAllPremiumRecordForRange(date_start: number, date_end: number, region: string) {
         const existingRecord: [...any] = await this.db.select(`SELECT * FROM premium WHERE date>=${date_start} AND date <= ${date_end} AND region='${region}'`);
 
-        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies);  });
+        existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies); });
 
         if (existingRecord.length > 0)
             return existingRecord;
@@ -224,7 +261,7 @@ export class TrackerDatabase {
             return null;
     }
 
-    async getAllPremiumRecord(date:number, region:string) {
+    async getAllPremiumRecord(date: number, region: string) {
         const existingRecord: [...any] = await this.db.select(`SELECT * FROM premium WHERE date=${date} AND region='${region}'`);
 
         existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies); });
@@ -235,7 +272,7 @@ export class TrackerDatabase {
             return null;
     }
 
-    async getPremiumRecord(date:number, region:string, id: number, name:string, category:string) {
+    async getPremiumRecord(date: number, region: string, id: number, name: string, category: string) {
         const existingRecord: [...any] = await this.db.select(`SELECT * FROM premium WHERE date=${date} AND region='${region}' AND id='${id}' AND name='${name}' AND category='${category}'`);
 
         existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies); });
@@ -246,7 +283,7 @@ export class TrackerDatabase {
             return null;
     }
 
-    async insertPremiumRecord(date: number, region: string, id: number, name:string, category:string, spending:number, currencies:CurrencyValue[], notes:string = "") {
+    async insertPremiumRecord(date: number, region: string, id: number, name: string, category: string, spending: number, currencies: CurrencyValue[], notes: string = "") {
         const existingRecord = await this.getPremiumRecord(date, region, id, name, category);
 
         if (existingRecord == null)
@@ -262,10 +299,8 @@ export class TrackerDatabase {
         }
     }
 
-    async deletePremiumRecord(date:number, region:string, id: number, name:string, category:string) {
+    async deletePremiumRecord(date: number, region: string, id: number, name: string, category: string) {
         const res: [...any] = await this.db.select(`DELETE FROM premium WHERE date=${date} AND region='${region}' AND id='${id}' AND name='${name}' AND category='${category}'`);
-
-        console.log(res)
     }
 }
 

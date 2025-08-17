@@ -83,7 +83,7 @@ export async function handleRankedStageRecordChange(gameName: string, taskType: 
     value = Number.parseInt(value as string);
 
     if (data.ranked_stages != null) {
-        let compareValues: { [key: string]: number } | null = null;
+        let compareValues = null;
         let currentProgress = session.cachedDays[date].getRankedProgress(taskType, data.id);
 
         if (currentProgress == null)
@@ -93,10 +93,10 @@ export async function handleRankedStageRecordChange(gameName: string, taskType: 
 
         if (taskType == 'weekly') {
             let lastWeekly = getLastWeeklyResetDateNumber(gameName, date);
-            compareValues = session.getHighestProgressForRankedStagesinRange(taskType, data, lastWeekly, date)[0];
+            compareValues = session.getHighestProgressForRankedStagesinRange(taskType, data, lastWeekly, date);
         } else if (taskType == 'periodic' && 'reset_day' in data && 'reset_period' in data) {
             let lastPeriod = getLastPeriodicResetDateNumber(data.reset_day, date, data.reset_period);
-            compareValues = session.getHighestProgressForRankedStagesinRange(taskType, data, lastPeriod, date)[0];
+            compareValues = session.getHighestProgressForRankedStagesinRange(taskType, data, lastPeriod, date);
         }
 
         stagesSum = sumCurrenciesForRankedStages(data, currentProgress, compareValues, gameName, currencies);
@@ -134,7 +134,7 @@ export async function removePremiumRecord(gameName: string, date: number, record
     });
 }
 
-function sumCurrenciesForRankedStages(data: TrackedTask, currentProgress: { [key: string]: number; }, compareValues: { [key: string]: number; } | null, gameName: string, currencies: CurrencyValue[]) {
+function sumCurrenciesForRankedStages(data: TrackedTask, currentProgress: { [key: string]: number; }, compareValues: { [key: string]: { [key: string]: number } } | null, gameName: string, currencies: CurrencyValue[]) {
     let stagesSum = 0;
     data.ranked_stages.stages.forEach(stage => {
         if (currentProgress[stage.id] == null)
@@ -144,7 +144,7 @@ function sumCurrenciesForRankedStages(data: TrackedTask, currentProgress: { [key
         let compareValue = -1;
 
         if (compareValues != null && stage.id in compareValues)
-            compareValue = compareValues[stage.id];
+            compareValue = compareValues[stage.id].value;
 
         stage.rewards.forEach(x => {
             if (x.step > compareValue && x.step <= currentProgress[stage.id]) {

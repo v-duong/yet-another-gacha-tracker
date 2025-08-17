@@ -17,11 +17,11 @@ function getResetTime() {
         resetTime.value = getNextWeeklyResetTime(props.context.gameName);
 }
 
-function shouldShowTimer(){
-    if(props.name == 'periodic') return false;
+function shouldShowTimer() {
+    if (props.name == 'periodic') return false;
 
-    if (props.name=='daily' || props.name=='weekly') {
-        return props.context.date == getCurrentDateNumberForGame(props.context.gameName)
+    if (props.name == 'daily' || props.name == 'weekly') {
+        return props.context.date == getCurrentDateNumberForGame(props.context.sessionData.lastSelectedRegion.reset_time)
     }
 
     return true;
@@ -57,6 +57,4 @@ watch(() => props.context.sessionData, () => getResetTime(), { immediate: "yes" 
     padding: 0.75em 1em;
     border-bottom: 1px solid var(--background-color-highlight);
 }
-
-
 </style>

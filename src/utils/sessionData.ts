@@ -99,13 +99,13 @@ export class GameSession {
     await this.fillRankedStageRecord(config, date_start, date_end);
 
     premiumRecords?.forEach((record) => {
-      let found = this.cachedDays[record.date].premiumSources.find(x=>x.id == record.id);
+      let found = this.cachedDays[record.date].premiumSources.find(x => x.id == record.id);
       if (found)
         return;
       this.cachedDays[record.date].premiumSources.push(record);
     })
 
-    
+
   }
 
   private async fillRankedStageRecord(config: GameTrackerConfig, date_start: number, date_end: number) {
@@ -144,6 +144,8 @@ export class GameSession {
       }
 
       if (progressType == null) return;
+
+      if (progressType[parent_task].rankedStageValues == null) progressType[parent_task].rankedStageValues = {}
 
       progressType[parent_task].rankedStageValues[record.stage_name] = record.value;
     });
@@ -195,11 +197,10 @@ export class GameSession {
     return { highest: highest, highestDate: highestDate };
   }
 
-  getHighestProgressForRankedStagesinRange(taskType: string, configData: TrackedTask, date_start: number, date_end: number): [{ [key: string]: number } | null, number] {
-    let res: { [key: string]: number } = {};
-    let highestDate = 0;
+  getHighestProgressForRankedStagesinRange(taskType: string, configData: TrackedTask, date_start: number, date_end: number): { [key: string]: { [key: string]: number } } | null {
+    let res: { [key: string]: { [key: string]: number } } = {};
 
-    if (configData.ranked_stages == null) return [null, 0];
+    if (configData.ranked_stages == null) return null;
 
     for (let i = date_start; i < date_end; i = getDateNumberWithOffset(i, 1)) {
       if (this.cachedDays == null || this.cachedDays[i] == null || this.cachedDays[i].populated == false) continue;
@@ -210,14 +211,18 @@ export class GameSession {
         continue;
 
       for (const key in valuesObj) {
-        if (valuesObj[key] > res[key] || !(key in res)) {
-          res[key] = valuesObj[key];
-          highestDate = i;
+        if (!(key in res)) {
+          res[key] = { value: 0, highestDate: 0 };
+        }
+
+        if (valuesObj[key] > res[key].value) {
+          res[key].value = valuesObj[key];
+          res[key].highestDate = i;
         }
       }
     }
 
-    return [res, highestDate];
+    return res;
   }
 
   async populateInitialCurrencyValue(date: number) {
@@ -541,7 +546,7 @@ export class DayData {
       return false;
 
     let index = this.premiumSources.indexOf(record);
-    let res = this.premiumSources.splice(index,1);
+    let res = this.premiumSources.splice(index, 1);
 
     this.calculateGainFromTasks();
 
