@@ -8,7 +8,7 @@ export function getNextDailyResetTime(gameName: string) {
     let regionData = sessionData.cachedGameSession[gameName]?.lastSelectedRegion;
 
     if (regionData == null)
-        console.log("region data not found");
+        console.log("region data not found for " + gameName);
 
     else
         resetTimeString = regionData.reset_time;

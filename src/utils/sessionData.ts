@@ -582,7 +582,12 @@ export class DayData {
     const addTaskToTotals = (taskCurrencies: CurrencyValue[]) => {
       taskCurrencies.forEach(x => {
         let c = this.totals.calculated.find(y => y.currency == x.currency);
-        if (c == null) return;
+
+        if (c == null) {
+          this.totals.calculated.push({currency: x.currency, amount:x.amount, gain: x.amount, loss: 0})
+          return;
+        }
+
         c.amount += x.amount;
         c.gain += x.amount;
       });

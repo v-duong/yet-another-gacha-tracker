@@ -1,7 +1,7 @@
 import { CurrencyValue, gameData, PeriodicTask, SteppedRewardEntry, TrackedTask } from "./gameData";
 import { sessionData, GameSession, PremiumEntry } from './sessionData';
 import { CurrencyHistory, TrackerDatabase } from "./db.utils";
-import { getLastWeeklyResetDateNumber, getCurrentDateNumberForGame, getDateNumberWithOffset, getLastPeriodicResetDateNumber, getNextWeeklyResetDateNumber, getNextPeriodicResetDateNumber } from "./date.utils";
+import { getLastWeeklyResetDateNumber, getCurrentDateNumberForGame, getDateNumberWithOffset, getLastPeriodicResetDateNumber, getNextWeeklyResetDateNumber, getNextPeriodicResetDateNumber, getNextDailyResetTime } from "./date.utils";
 
 const timerArray: { [key: string]: number } = {};
 

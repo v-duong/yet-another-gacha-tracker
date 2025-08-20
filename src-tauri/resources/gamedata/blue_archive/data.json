@@ -5,7 +5,11 @@
   "accent_color": "rgb(41,129,217)",
   "accent_font_color": "rgb(15, 15, 15)",
   "currencies": [
-    "pyroxene"
+    {
+      "id": "pyroxene",
+      "tracked": true,
+      "primary": true
+    }
   ],
   "gacha": [
     {
@@ -22,9 +26,21 @@
   ],
   "daily_currency_passes": [
     {
-      "id": "monthly_pyroxene_membership",
-      "currency": "pyroxene",
-      "amount": 90
+      "id": "daily_pyroxene_membership",
+      "currencies": [
+        {
+          "currency": "pyroxene",
+          "amount": 90
+        }
+      ],
+      "cost": 4.99,
+      "bonus": [
+        {
+          "currency": "pyroxene",
+          "amount": 300
+        }
+      ],
+      "duration": 30
     }
   ],
   "regions": [
