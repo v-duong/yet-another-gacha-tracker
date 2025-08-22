@@ -6,24 +6,25 @@ import { appConfigDir } from "@tauri-apps/api/path";
 import { setupI18n, loadLocaleMessages } from "./i18n.js"
 import { exists, mkdir } from "@tauri-apps/plugin-fs";
 
-let dbDir = await appConfigDir();
-if (!await exists(dbDir)) mkdir(dbDir);
+appConfigDir().then(async (dbDir) => {
+    if (!await exists(dbDir)) mkdir(dbDir);
 
-const i18nOptions = {
-    locale: "en",
-    fallbackLocale: "en",
-    globalInjection: true,
-    legacy: false
-}
+    const i18nOptions = {
+        locale: "en",
+        fallbackLocale: "en",
+        globalInjection: true,
+        legacy: false
+    }
 
-const i18n = setupI18n(i18nOptions);
+    const i18n = setupI18n(i18nOptions);
 
-initializeData().then(async () => {
-    const app = createApp(App);
-    app.use(i18n);
-    await loadLocaleMessages(i18n, i18n.global.locale.value, i18n.global.fallbackLocale.value);
-    app.mount("#app");
-}).catch((e) => {
-    console.log(e);
+    initializeData().then(async () => {
+        const app = createApp(App);
+        app.use(i18n);
+        await loadLocaleMessages(i18n, i18n.global.locale.value, i18n.global.fallbackLocale.value);
+        app.mount("#app");
+    }).catch((e) => {
+        console.log(e);
+    });
 });
 

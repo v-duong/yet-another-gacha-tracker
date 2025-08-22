@@ -15,17 +15,24 @@ const isExpanded = ref(false);
         <button @click="isExpanded = !isExpanded">EXPAND</button>
         <div class="session-summary-information flex-row">
             <div>SESSION TIME</div>
-            <div>VARIOUS STATS</div>
+
+            <div>
+                <div>Day Stats:</div>
+            </div>
+
             <div class="summary-currency-list flex-column">
                 <template v-for="currency in context.config.currencies">
                     <div v-if="currency.tracked" v-show="currency.primary || isExpanded"
                         class="summary-currency-list-entry flex-row">
                         <div class="summary-currency-entry-name">
-                            <img v-if="imageExists(context.gameName, currency.id)" class="currency-image" :src="getCurrencyImage(context.gameName, currency.id)"
+                            <img v-if="imageExists(context.gameName, currency.id)" class="currency-image"
+                                :src="getCurrencyImage(context.gameName, currency.id)"
                                 :alt="$t(appendGameToString(currency.id))" />
                             <div v-else>{{ $t(appendGameToString(currency.id)) }}</div>
                         </div>
-                        <div class="summary-currency-entry-name"> {{ context.sessionData.cachedDays[context.date]?.getCurrencyInitialValues(currency.id) }} {{ context.sessionData.cachedDays[context.date]?.getCurrencyGainValues(currency.id) }}  →
+                        <div class="summary-currency-entry-name"> {{
+                            context.sessionData.cachedDays[context.date]?.getCurrencyInitialValues(currency.id) }} {{
+                                context.sessionData.cachedDays[context.date]?.getCurrencyGainValues(currency.id) }} →
                         </div>
                         <input type="number" class="summary-currency-entry-input"
                             :class="{ overridden: context.sessionData.cachedDays[context.date]?.hasOverride() }"

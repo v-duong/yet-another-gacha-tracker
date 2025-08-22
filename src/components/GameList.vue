@@ -26,7 +26,8 @@ import { getNextDailyResetTime } from '../utils/date.utils';
 <style lang="css" scoped>
 .game-list-parent {
     background-color: var(--background-color-secondary);
-    width: 20em;
+    width: 15em;
+    flex-shrink: 0;
 
     li {
         display: flex;

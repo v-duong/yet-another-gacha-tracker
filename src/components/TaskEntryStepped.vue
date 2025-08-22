@@ -1,6 +1,6 @@
-<script setup lang="ts">
+<script setup>
 import { ref, watch } from 'vue';
-import { appendGameToString, SteppedRewardEntry, getCurrencyImage, imageExists } from '../utils/gameData';
+import { appendGameToString, getCurrencyImage, imageExists } from '../utils/gameData';
 import { handleTaskRecordChange } from '../utils/helpers.utils';
 import { dateNumberToDate, getLastPeriodicResetDateNumber, getLastWeeklyResetDateNumber } from "../utils/date.utils";
 import './style/TaskEntry.css'
@@ -11,10 +11,10 @@ const lastRecords = ref();
 
 let maxSteps = 0;
 let minSteps = 0;
-let cachedValue: number = -4;
+let cachedValue = -4;
 
 
-props.data.stepped_rewards?.forEach((entry: SteppedRewardEntry) => {
+props.data.stepped_rewards?.forEach((entry) => {
     if (entry.step > maxSteps) maxSteps = entry.step;
 });
 
@@ -43,8 +43,8 @@ watch(() => [props.context.date, props.context.sessionData], () => {
     cachedValue = stepValue.value;
 }, { immediate: true })
 
-function getTotalFromStepped(stepped_rewards_array: SteppedRewardEntry[]) {
-    let resObj: { [key: string]: number } = {};
+function getTotalFromStepped(stepped_rewards_array) {
+    let resObj = {};
     try {
         stepped_rewards_array.forEach((entry) => {
             entry.currencies.forEach(currency => {
@@ -91,11 +91,11 @@ function clampStepValueAndUpdate() {
     <div class="task-entry-container flex-column">
         <div class="task-entry flex-row align-items-center">
             <div class="stepped-counter flex-row">
-                <button @click="decrement">-</button>
+                <button @click="decrement" :disabled="stepValue <= minSteps">-</button>
                 <input type="number" class="step-input" v-model="stepValue" :id="data.id" @change="// @ts-ignore 
                     (e) => { clampStepValueAndUpdate(); }" />
                 <div>/ {{ maxSteps }}</div>
-                <button @click="increment">+</button>
+                <button @click="increment" :disabled="stepValue >= maxSteps">+</button>
             </div>
             <p>{{ $t(appendGameToString(data.id)) }}</p>
             <div class="rewards-list">

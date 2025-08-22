@@ -4,6 +4,12 @@
   "version": 1,
   "accent_color": "rgb(41,129,217)",
   "accent_font_color": "rgb(15, 15, 15)",
+  "regions": [
+    {
+      "id": "global",
+      "reset_time": "12:00:00 -07:00"
+    }
+  ],
   "currencies": [
     {
       "id": "pyroxene",
@@ -14,14 +20,15 @@
   "gacha": [
     {
       "id": "unit_banner",
-      "pull_currency": [
+      "pull_cost": [
         {
           "currency": "pyroxene",
-          "cost": 200
+          "amount": 120
         }
       ],
       "rate": 0.03,
-      "fifty_fifty_system": false
+      "fifty_fifty_system": false,
+      "hard_pity": 200
     }
   ],
   "daily_currency_passes": [
@@ -41,12 +48,6 @@
         }
       ],
       "duration": 30
-    }
-  ],
-  "regions": [
-    {
-      "id": "global",
-      "reset_time": "12:00:00 -07:00"
     }
   ],
   "weekly_reset_day": "Monday",

@@ -129,7 +129,7 @@ export class TrackerDatabase {
     //SELECT * from daily, json_each(currencies) WHERE json_extract(json_each.value,'$.currency') IS 'polychrome';
 
     async getCurrencyHistoryForRange(date_start: number, date_end: number, region: string) {
-        const existingRecord: [...any] = await this.db.select(`SELECT * FROM currencyHistory WHERE date>=${date_start} AND date < ${date_end} AND region='${region}'`);
+        const existingRecord: [...any] = await this.db.select(`SELECT * FROM currencyHistory WHERE date>=${date_start} AND date <= ${date_end} AND region='${region}'`);
 
         existingRecord.forEach(x => { x.currencies = JSON.parse(x.currencies); x.override = JSON.parse(x.override); });
 

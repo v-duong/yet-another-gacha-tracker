@@ -21,6 +21,14 @@ export class GameSession {
     this.lastSelectedRegion = region;
   }
 
+  getCurrentDayData() {
+    let date = getCurrentDateNumberForGame(this.lastSelectedRegion.reset_time);
+    if (this.cachedDays[date] == null)
+      this.populateSessionData(date);
+
+    return this.cachedDays[date];
+  }
+
   async populateSessionData(date: number = this.lastSelectedDay) {
     if (this.cachedDays[date] == null)
       this.cachedDays[date] = new DayData(this.gameName);
@@ -69,6 +77,7 @@ export class GameSession {
 
     for (let i = date_start; i <= date_end; i = getDateNumberWithOffset(i, 1)) {
       if (this.cachedDays[i] == null) {
+        console.log(this.gameName, i)
         this.cachedDays[i] = new DayData(this.gameName);
         needsPopulate = true;
       }
@@ -361,6 +370,46 @@ export class GameSession {
 
     return [labels, data];
   }
+
+
+  getTotalGachaPulls() {
+    const res: { name: string; amount: number; }[] = [];
+
+    gameData[this.gameName].config.gacha.forEach((banner) => {
+      let currentBanner = { name: banner.id, amount: 0 };
+      res.push(currentBanner);
+      banner.pull_cost?.forEach(cost => {
+        let count = this.getCurrentDayData().getCurrencyValue(cost.currency) / cost.amount;
+        currentBanner.amount += count;
+      })
+    });
+
+    return res;
+  }
+
+  getTotalGachaWins(options: { [key: string]: number }) {
+    const res: { name: string; amount: number; }[] = [];
+
+    gameData[this.gameName].config.gacha.forEach((banner) => {
+      let currentBanner = { name: banner.id, amount: 0 };
+      res.push(currentBanner);
+      banner.pull_cost?.forEach(cost => {
+        let count = this.getCurrentDayData().getCurrencyValue(cost.currency) / cost.amount;
+        currentBanner.amount += count;
+      })
+
+      let pity = 200;
+
+      if (options.fullPity && banner.hard_pity) pity = banner.hard_pity
+      if (options.fullPity && banner.soft_pity) pity = banner.soft_pity
+
+      if (banner.fifty_fifty_system) pity *= 2;
+
+      currentBanner.amount /= pity;
+    });
+
+    return res;
+  }
 }
 
 export class SessionRecord {
@@ -565,6 +614,7 @@ export class DayData {
 
 
   getCurrencyValue(currency: string) {
+    console.log(this.totals)
     let r = this.totals.override.find(x => x.currency == currency);
     if (r) return r.amount;
 
@@ -584,7 +634,7 @@ export class DayData {
         let c = this.totals.calculated.find(y => y.currency == x.currency);
 
         if (c == null) {
-          this.totals.calculated.push({currency: x.currency, amount:x.amount, gain: x.amount, loss: 0})
+          this.totals.calculated.push({ currency: x.currency, amount: x.amount, gain: x.amount, loss: 0 })
           return;
         }
 

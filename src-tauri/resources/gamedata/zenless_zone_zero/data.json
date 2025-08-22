@@ -41,7 +41,9 @@
       ],
       "rate": 0.006,
       "fifty_fifty_system": true,
-      "target_rate": 0.5
+      "target_rate": 0.5,
+      "hard_pity": 90,
+      "soft_pity": 78
     },
     {
       "id": "weapon_banner",
@@ -57,7 +59,9 @@
       ],
       "rate": 0.006,
       "fifty_fifty_system": true,
-      "target_rate": 0.75
+      "target_rate": 0.75,
+      "hard_pity": 80,
+      "soft_pity": 70
     }
   ],
   "daily_currency_passes": [

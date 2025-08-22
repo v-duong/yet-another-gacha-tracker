@@ -8,6 +8,7 @@ import SessionSummaryBar from './SessionSummaryBar.vue';
 import DayNav from './DayNav.vue';
 import LineChart from './LineChart.vue';
 import PremiumItemBox from './PremiumItemBox.vue';
+import GameSummaryPanel from './GameSummaryPanel.vue';
 
 const currentContext = ref({ gameName: "", config: {}, sessionData: {}, date: "" })
 
@@ -38,8 +39,11 @@ async function updateCurrent() {
             <DayNav :context="currentContext" :updateCallback="async () => updateGameView(currentContext.gameName)">
             </DayNav>
         </div>
-        <div class="chart-parent">
-            <LineChart :context="currentContext" :currency="getPrimaryCurrency(currentContext.gameName)"></LineChart>
+        <div class="info-panel-parent flex-row">
+            <GameSummaryPanel class="game-summary-parent" :context="currentContext"/>
+            <div class="chart-parent">
+                <LineChart :context="currentContext" :currency="getPrimaryCurrency(currentContext.gameName)"></LineChart>
+            </div>
         </div>
         <div class="task-container">
             <TaskBox v-if="currentContext.config?.daily != null" id="daily-tasks" :name="'daily'"
@@ -58,12 +62,25 @@ async function updateCurrent() {
 </template>
 
 <style lang="css" scoped>
+.info-panel-parent {
+    position: relative;
+    gap:1em;
+    padding: 1em;
+}
+
+.game-summary-parent {
+    max-width: 14em;
+    width: 14em;
+    border-radius: 0.2em;
+}
+
 .chart-parent {
     height: 16em;
     padding: 1em;
-    width: calc(100% - 2em);
+    width: calc(100% - 15em - 4em);
     position: relative;
     background-color: var(--background-color-tertiary);
+    border-radius: 0.2em;
 }
 
 .main-view-container {
@@ -71,6 +88,8 @@ async function updateCurrent() {
     min-height: 100vh;
     --container-gap-value: 1em;
     position: relative;
+    background-color: var(--background-color-primary);
+    flex-grow: 0;
 }
 
 .top-bar {

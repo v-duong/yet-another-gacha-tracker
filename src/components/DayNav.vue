@@ -32,7 +32,7 @@ function shiftDate(offset){
             <div class="date-num">{{ getDateString() }}</div>
             <div>{{ getDayOfWeek() }}</div>
         </div>
-        <button @click="()=>shiftDate(1)">►</button>
+        <button @click="()=>shiftDate(1)" :disabled="getCurrentDateNumberForGame(context.sessionData.lastSelectedRegion.reset_time) <= context.date">►</button>
     </div>
 </template>
 

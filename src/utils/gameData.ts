@@ -43,6 +43,8 @@ export type GachaBanner = {
   rate: number;
   fifty_fifty_system?: boolean;
   target_rate?: number;
+  hard_pity?: number;
+  soft_pity?: number;
 }
 
 export interface TrackedTask {

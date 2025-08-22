@@ -22,7 +22,7 @@ let config = {
                 color: '#555',
             },
             ticks: {
-                maxTicksLimit:17
+                maxTicksLimit: 17
             }
         },
         y: {
@@ -62,7 +62,8 @@ watch(() => props.context.sessionData.cachedDays, async () => {
     chartData = {
         labels: res[0],
         datasets: [{
-            label: 'Polychromes', data: data.value,
+            label: props.currency, 
+            data: data.value,
             fill: {
                 target: 'origin', above: function (context) {
                     const chart = context.chart;
@@ -75,11 +76,11 @@ watch(() => props.context.sessionData.cachedDays, async () => {
                     return getGradient(ctx, chartArea);
                 }
             },
-            borderColor: props.context.config?.accent_color, tension: 0.15
+            borderColor: props.context.config?.accent_color, tension: 0.25
         }]
 
     }
-}, { deep: 5 });
+}, { immediate: "yes", deep: 5 });
 
 </script>
 
