@@ -9,6 +9,7 @@ import DayNav from './DayNav.vue';
 import LineChart from './LineChart.vue';
 import PremiumItemBox from './PremiumItemBox.vue';
 import GameSummaryPanel from './GameSummaryPanel.vue';
+import EventTaskBox from './EventTaskBox.vue';
 
 const currentContext = ref({ gameName: "", config: {}, sessionData: {}, date: "" })
 
@@ -53,8 +54,8 @@ async function updateCurrent() {
             <PremiumItemBox id="premium-items" :name="'premium'" :context="currentContext" />
             <TaskBox v-if="currentContext.config?.periodic != null" id="periodic-tasks" :name="'periodic'"
                 :context="currentContext" :data="currentContext.config?.periodic" />
-            <TaskBox v-if="currentContext.config?.event != null" id="event-tasks" :name="'event'"
-                :context="currentContext" :data="currentContext.config?.event" />
+            <EventTaskBox id="event-tasks" :name="'event'"
+                :context="currentContext" :data="currentContext.config?.event" :userData="currentContext.customEventConfig" />
         </div>
         <SessionSummaryBar :context="currentContext" />
     </div>

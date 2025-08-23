@@ -1,0 +1,81 @@
+{
+  "id": "honkai_star_rail",
+  "version": 1,
+  "accent_color": "rgb(241,129,17)",
+  "accent_font_color": "rgb(15, 15, 15)",
+  "currencies": [
+    {
+      "id": "stellar_jade",
+      "tracked": true,
+      "primary": true
+    },
+    {
+      "id": "oneiric_shard",
+      "tracked": true
+    },
+    {
+      "id": "premium_pull",
+      "tracked": true
+    },
+    {
+      "id": "regular_pull",
+      "tracked": false
+    }
+  ],
+  "gacha": [
+    {
+      "id": "premium_unit_banner",
+      "pull_cost": [
+        {
+          "currency": "premium_pull",
+          "amount": 1
+        },
+        {
+          "currency": "stellar_jade",
+          "amount": 160
+        }
+      ],
+      "rate": 0.006,
+      "fifty_fifty_system": true,
+      "target_rate": 0.5,
+      "hard_pity": 90,
+      "soft_pity": 78
+    },
+    {
+      "id": "weapon_banner",
+      "pull_cost": [
+        {
+          "currency": "premium_pull",
+          "amount": 1
+        },
+        {
+          "currency": "stellar_jade",
+          "amount": 160
+        }
+      ],
+      "rate": 0.006,
+      "fifty_fifty_system": true,
+      "target_rate": 0.75,
+      "hard_pity": 80,
+      "soft_pity": 70
+    }
+  ],
+  "regions": [
+    {
+      "id": "America",
+      "reset_time": "4:00:00 -05:00"
+    }
+  ],
+  "weekly_reset_day": "Monday",
+  "daily": [
+    {
+      "id": "daily_tasks",
+      "rewards": [
+        {
+          "currency": "stellar_jade",
+          "amount": 60
+        }
+      ]
+    }
+  ]
+}

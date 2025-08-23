@@ -1,0 +1,58 @@
+{
+  "id": "nikke_goddess_of_victory",
+  "version": 1,
+  "accent_color": "rgb(241,129,17)",
+  "accent_font_color": "rgb(15, 15, 15)",
+  "currencies": [
+    {
+      "id": "gems",
+      "tracked": true,
+      "primary": true
+    },
+    {
+      "id": "premium_pulls",
+      "tracked": true
+    },
+    {
+      "id": "regular_pulls",
+      "tracked": false
+    }
+  ],
+  "gacha": [
+    {
+      "id": "premium_unit_banner",
+      "pull_cost": [
+        {
+          "currency": "premium_pulls",
+          "amount": 1
+        },
+        {
+          "currency": "gems",
+          "amount": 300
+        }
+      ],
+      "rate": 0.002,
+      "fifty_fifty_system": false,
+      "target_rate": 0.01,
+      "hard_pity": 200
+    }
+  ],
+  "regions": [
+    {
+      "id": "America",
+      "reset_time": "20:00:00 +00:00"
+    }
+  ],
+  "weekly_reset_day": "Monday",
+  "daily": [
+    {
+      "id": "daily_tasks",
+      "rewards": [
+        {
+          "currency": "gems",
+          "amount": 100
+        }
+      ]
+    }
+  ]
+}

@@ -32,7 +32,7 @@ export function getNextWeeklyResetTime(gameName: string, fromDate: Date = new Da
 
     let nextWeek: Date = new Date();
 
-    switch (gameData[gameName].config.weekly_reset_day.toLowerCase()) {
+    switch (gameData[gameName].config.weekly_reset_day?.toLowerCase()) {
         case "monday":
             nextWeek = nextMonday(fromDate);
             break;
@@ -52,8 +52,10 @@ export function getNextWeeklyResetTime(gameName: string, fromDate: Date = new Da
             nextWeek = nextSaturday(fromDate);
             break;
         case "sunday":
+        default:
             nextWeek = nextSunday(fromDate);
             break;
+
     }
 
     let resetTime = add(new Date(parseResetTimeString(resetTimeString, nextWeek)), { seconds: 0 });
@@ -106,7 +108,7 @@ export function getNextPeriodicResetTime(gameName: string, resetDate: string, co
         resetTimeString = regionData.reset_time;
 
 
-    let date = add(getLastPeriodicResetDate(resetDate, comparedDateNumber, resetPeriod),{days: resetPeriod});
+    let date = add(getLastPeriodicResetDate(resetDate, comparedDateNumber, resetPeriod), { days: resetPeriod });
     return new Date(parseResetTimeString(resetTimeString, date));
 }
 

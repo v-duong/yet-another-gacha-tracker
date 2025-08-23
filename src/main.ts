@@ -6,8 +6,8 @@ import { appConfigDir } from "@tauri-apps/api/path";
 import { setupI18n, loadLocaleMessages } from "./i18n.js"
 import { exists, mkdir } from "@tauri-apps/plugin-fs";
 
-appConfigDir().then(async (dbDir) => {
-    if (!await exists(dbDir)) mkdir(dbDir);
+appConfigDir().then(async (appDir) => {
+    if (!await exists(appDir)) mkdir(appDir);
 
     const i18nOptions = {
         locale: "en",

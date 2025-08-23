@@ -1,0 +1,62 @@
+{
+  "id": "aether_gazer",
+  "version": 1,
+  "accent_color": "rgb(241,129,17)",
+  "accent_font_color": "rgb(15, 15, 15)",
+  "currencies": [
+    {
+      "id": "shifted_star",
+      "tracked": true,
+      "primary": true
+    },
+    {
+      "id": "shifting_flower",
+      "tracked": true
+    },
+    {
+      "id": "premium_pulls",
+      "tracked": true
+    },
+    {
+      "id": "regular_pulls",
+      "tracked": false
+    }
+  ],
+  "gacha": [
+    {
+      "id": "premium_unit_banner",
+      "pull_cost": [
+        {
+          "currency": "premium_pulls",
+          "amount": 1
+        },
+        {
+          "currency": "shifted_star",
+          "amount": 200
+        }
+      ],
+      "rate": 0.006,
+      "fifty_fifty_system": false,
+      "target_rate": 1,
+      "hard_pity": 90
+    }
+  ],
+  "regions": [
+    {
+      "id": "America",
+      "reset_time": "7:00:00 -05:00"
+    }
+  ],
+  "weekly_reset_day": "Monday",
+  "daily": [
+    {
+      "id": "daily_tasks",
+      "rewards": [
+        {
+          "currency": "shifted_star",
+          "amount": 90
+        }
+      ]
+    }
+  ]
+}

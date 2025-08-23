@@ -41,6 +41,8 @@ const isExpanded = ref(false);
                             @change="(e) => handleCurrencyHistoryChange(context.gameName, context.date, currency.id, Number.parseInt(e.target.value))" />
                     </div>
                 </template>
+                <button v-show="isExpanded" @click="context.sessionData.cachedDays[context.date]?.clearOverride"
+                    :disabled="!context.sessionData.cachedDays[context.date]?.hasOverride()">Clear Overrides</button>
             </div>
         </div>
     </div>
@@ -58,10 +60,7 @@ const isExpanded = ref(false);
     flex-direction: column;
     transition: height 0.2s;
 
-
-
     &.expanded {
-
         height: 15em;
     }
 }
@@ -93,6 +92,11 @@ const isExpanded = ref(false);
 
         &:focus {
             background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        &.overridden {
+            background-color: rgba(255, 251, 0, 0.5);
+            border-inline: 0.1em solid rgb(255, 132, 83);
         }
     }
 }

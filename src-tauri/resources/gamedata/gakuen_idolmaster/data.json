@@ -1,0 +1,58 @@
+{
+  "id": "gakuen_idolmaster",
+  "version": 1,
+  "accent_color": "rgb(241,129,17)",
+  "accent_font_color": "rgb(15, 15, 15)",
+  "currencies": [
+    {
+      "id": "jewel",
+      "tracked": true,
+      "primary": true
+    },
+    {
+      "id": "premium_pulls",
+      "tracked": true
+    },
+    {
+      "id": "regular_pulls",
+      "tracked": false
+    }
+  ],
+  "gacha": [
+    {
+      "id": "premium_unit_banner",
+      "pull_cost": [
+        {
+          "currency": "premium_pulls",
+          "amount": 1
+        },
+        {
+          "currency": "jewel",
+          "amount": 250
+        }
+      ],
+      "rate": 0.002,
+      "fifty_fifty_system": false,
+      "target_rate": 0.01,
+      "hard_pity": 200
+    }
+  ],
+  "regions": [
+    {
+      "id": "Japan",
+      "reset_time": "13:00:00 -07:00"
+    }
+  ],
+  "weekly_reset_day": "Monday",
+  "daily": [
+    {
+      "id": "daily_tasks",
+      "rewards": [
+        {
+          "currency": "jewel",
+          "amount": 50
+        }
+      ]
+    }
+  ]
+}

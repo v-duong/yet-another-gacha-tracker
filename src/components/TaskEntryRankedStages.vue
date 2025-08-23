@@ -135,8 +135,7 @@ function getOldDateFromLastRecords(s) {
                             <option v-for="rewardTier in stage.rewards"
                                 v-show="rewardTier.step >= getPrevValueFromLastRecords(stage.id)"
                                 :value="rewardTier.step">
-                                {{ $t(appendGameToString(data.ranked_stages.progress_labels[rewardTier.step - 1])) }} {{
-                                rewardTier.step }}
+                                {{ $t(appendGameToString(data.ranked_stages.progress_labels[rewardTier.step - 1])) }}
                             </option>
                         </select>
                     </div>

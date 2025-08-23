@@ -91,11 +91,11 @@ function clampStepValueAndUpdate() {
     <div class="task-entry-container flex-column">
         <div class="task-entry flex-row align-items-center">
             <div class="stepped-counter flex-row">
-                <button @click="decrement" :disabled="stepValue <= minSteps">-</button>
+                <button class="square-button" @click="decrement" :disabled="stepValue <= minSteps">-</button>
                 <input type="number" class="step-input" v-model="stepValue" :id="data.id" @change="// @ts-ignore 
                     (e) => { clampStepValueAndUpdate(); }" />
                 <div>/ {{ maxSteps }}</div>
-                <button @click="increment" :disabled="stepValue >= maxSteps">+</button>
+                <button class="square-button" @click="increment" :disabled="stepValue >= maxSteps">+</button>
             </div>
             <p>{{ $t(appendGameToString(data.id)) }}</p>
             <div class="rewards-list">
@@ -121,13 +121,6 @@ function clampStepValueAndUpdate() {
 .stepped-counter {
     gap: 0.33em;
     align-items: center;
-
-    button {
-        background-color: var(--background-color-highlight);
-        border: none;
-        width: 1.15em;
-        height: 1.15em;
-    }
 
     .step-input {
         width: 2.5em;

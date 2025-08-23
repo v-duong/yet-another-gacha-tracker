@@ -1,27 +1,32 @@
-import { readDir, exists, readTextFile } from '@tauri-apps/plugin-fs';
-import { resolveResource } from '@tauri-apps/api/path';
+import { readDir, exists, readTextFile, mkdir } from '@tauri-apps/plugin-fs';
+import { appConfigDir, resolveResource } from '@tauri-apps/api/path';
 import { reactive } from 'vue';
 import { TrackerDatabase, loadDB } from './db.utils';
-import Database from '@tauri-apps/plugin-sql';
 import { sessionData } from './sessionData';
 import { convertFileSrc } from '@tauri-apps/api/core';
 
-export type GameTrackerConfig = {
+export interface GameConfig {
+  order?: number;
+  accent_color?: string;
+  currencies?: CurrencyConfig[];
+  gacha?: GachaBanner[];
+  daily?: TrackedTask[];
+  weekly?: TrackedTask[];
+  periodic?: PeriodicTask[];
+  event?: EventTask[];
+  daily_currency_passes?: CurrencyPass[];
+
+  [name: string]: any;
+}
+
+export interface MainTrackerConfig extends GameConfig {
   id: string;
   version: number;
   name_key: string;
   order: number;
   regions: RegionData[];
-  weekly_reset_day: string;
-  accent_color?: string;
+  weekly_reset_day?: string;
   currencies: CurrencyConfig[];
-  gacha: GachaBanner[];
-  daily?: TrackedTask[];
-  weekly?: TrackedTask[];
-  periodic?: PeriodicTask[];
-  daily_currency_passes: CurrencyPass[];
-
-  [name: string]: any;
 }
 
 export type CurrencyPass = {
@@ -58,6 +63,12 @@ export interface PeriodicTask extends TrackedTask {
   reset_day: string;
   reset_period: number;
 }
+
+export interface EventTask extends TrackedTask {
+  start_date: number;
+  end_date: number;
+}
+
 
 export type RankedStagesData = {
   progress_labels?: string[];
@@ -96,9 +107,12 @@ export interface SteppedRewardEntry {
 }
 
 export type GameDataEntry = {
-  config: GameTrackerConfig;
+  config: MainTrackerConfig;
+  userConfig: GameConfig;
+  customEventConfig: EventTask[],
   imagesPath: string;
   localePath: string;
+  userDataPath: string;
   db: TrackerDatabase;
   trackedCurrencies: string[];
   currencyImages: { [key: string]: { exists: boolean, path: string } }
@@ -111,19 +125,6 @@ export type GameListEntry = {
 
 export const gameData: { [key: string | number]: GameDataEntry } = reactive({});
 export let gameList: { list: GameListEntry[] } = reactive({ list: [] });
-
-export async function addResourcesFromDir(gameDir: string) {
-  const jsonString = await readTextFile(gameDir + "/data.json");
-  const data: GameTrackerConfig = JSON.parse(jsonString);
-  gameData[data.id] = {
-    config: data,
-    imagesPath: gameDir + "/images",
-    localePath: gameDir + "/i18n",
-    db: new TrackerDatabase(await loadDB(data.id)),
-    trackedCurrencies: [],
-    currencyImages: {}
-  };
-}
 
 export function imageExists(gameName: string, currency: string) {
   return gameData[gameName]?.currencyImages[currency]?.exists;
@@ -164,8 +165,8 @@ export async function initializeData() {
     if (entry.isDirectory) {
       const gameDir = `${gameDataDirectory}/${entry.name}`;
       if (await exists(gameDir + "/data.json")) {
-        await addResourcesFromDir(gameDir);
-        //load user settings here
+        let data = await addResourcesFromDir(gameDir);
+        await loadUserData(data);
       }
       else
         console.log(`data.json not found in game folder ${entry.name}`)
@@ -177,6 +178,47 @@ export async function initializeData() {
   if (gameList.list.length > 0) {
     const gameName = gameList.list[0].name;
     sessionData.currentGameView = gameName;
+  }
+}
+
+export async function addResourcesFromDir(gameDir: string) {
+  const jsonString = await readTextFile(gameDir + "/data.json");
+  const data: MainTrackerConfig = JSON.parse(jsonString);
+  let userDataDir = await appConfigDir() + '/data/' + data.id;
+  gameData[data.id] = {
+    config: data,
+    userConfig: {},
+    customEventConfig: [],
+    imagesPath: gameDir + "/images",
+    localePath: gameDir + "/i18n",
+    userDataPath: userDataDir,
+    db: new TrackerDatabase(await loadDB(data.id)),
+    trackedCurrencies: [],
+    currencyImages: {}
+  };
+
+  return gameData[data.id];
+}
+
+export async function loadUserData(gameData: GameDataEntry) {
+  if (!await exists(gameData.userDataPath)) {
+    return;
+  }
+}
+
+export async function writeUserData(gameName: string) {
+  let userDataDir = gameData[gameName].userDataPath;
+
+  if (!await exists(userDataDir)) {
+    await mkdir(userDataDir);
+  }
+}
+
+export async function writeEventData(gameName: string) {
+  let userDataDir = gameData[gameName].userDataPath;
+
+  if (!await exists(userDataDir)) {
+    await mkdir(userDataDir);
   }
 }
 

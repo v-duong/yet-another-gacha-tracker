@@ -36,10 +36,12 @@ export async function handleTaskRecordChange(gameName: string, taskType: string,
         recordsToUpdate = await session.adjustSteppedRewardsValuesRetroactive(data, getDateNumberWithOffset(date, 1), nextCheck, taskType, value);
     } else if (data.rewards != null && value > 0) {
         data.rewards.forEach(c => {
-            if (!gameData[gameName].trackedCurrencies.includes(c.currency))
-                return;
-
-            currencies.push(c);
+            let existing = currencies.find(x => x.currency == c.currency);
+            if (existing) {
+                existing.amount += c.amount
+            } else {
+                currencies.push(c);
+            }
         })
     }
 
@@ -57,13 +59,43 @@ export async function handleTaskRecordChange(gameName: string, taskType: string,
     return currencies;
 }
 
+export async function handleGenericRecordChange(gameName: string, taskType: string, date: number, data: TrackedTask | PeriodicTask, value: number) {
+    let currencies: CurrencyValue[] = [];
+    const session = sessionData.cachedGameSession[gameName];
+    let recordsToUpdate: number[] = [];
+
+    if (data.rewards != null && value > 0) {
+        data.rewards.forEach(c => {
+            let existing = currencies.find(x => x.currency == c.currency);
+            if (existing) {
+                existing.amount += c.amount
+            } else {
+                currencies.push(c);
+            }
+        })
+    }
+
+    if (value > 0)
+        session.cachedDays[date].setProgress(taskType, data.id, value, currencies);
+    else
+        session.cachedDays[date].deleteProgress(taskType, data.id);
+
+    let historyRecordsToUpdate = [...new Set([...recordsToUpdate, ...await session.adjustCurrentHistoryRetroactive(date)])];
+
+    debounce(data.id, () => {
+        gameData[gameName].db.insertTaskRecord(taskType, date, session.lastSelectedRegion.id, data.id, value, currencies, "");
+        gameData[gameName].db.updateTaskRecordsForRange(recordsToUpdate, session.cachedDays, session.lastSelectedRegion.id, taskType, data.id);
+        gameData[gameName].db.insertCurrencyHistory(date, session.lastSelectedRegion.id, session.cachedDays[date].totals.calculated, session.cachedDays[date].totals.override, "");
+        gameData[gameName].db.updateCurrencyHistoryForRange(historyRecordsToUpdate, session.cachedDays, session.lastSelectedRegion.id);
+    });
+
+    return currencies;
+}
+
 export function sumCurrenciesforSteppedRewards(data: TrackedTask | PeriodicTask, compareValue: number, value: number, gameName: string, currencies: CurrencyValue[]) {
     data.stepped_rewards.forEach(x => {
         if (x.step > compareValue && x.step <= value) {
             x.currencies.forEach(c => {
-                if (!gameData[gameName].trackedCurrencies.includes(c.currency))
-                    return;
-
                 let existing = currencies.find((y => y.currency == c.currency));
                 if (existing) {
                     existing.amount += c.amount;
@@ -149,9 +181,6 @@ function sumCurrenciesForRankedStages(data: TrackedTask, currentProgress: { [key
         stage.rewards.forEach(x => {
             if (x.step > compareValue && x.step <= currentProgress[stage.id]) {
                 x.currencies.forEach(c => {
-                    if (!gameData[gameName].trackedCurrencies.includes(c.currency))
-                        return;
-
                     let existing = currencies.find((y => y.currency == c.currency));
                     if (existing) {
                         existing.amount += c.amount;
@@ -170,7 +199,13 @@ export async function handleCurrencyHistoryChange(gameName: string, date: number
 
     if (value == null || value < 0) value = 0;
 
-    session.cachedDays[date].totals.calculated.forEach(c => {
+    let target = session.cachedDays[date].totals.override;
+
+    if (session.cachedDays[date].totals.override.length == 0)
+        target = session.cachedDays[date].totals.calculated;
+
+
+    target.forEach(c => {
         let r = findCurrencyRecord(session.cachedDays[date].totals.override, c.currency);
 
         if (r == null) {

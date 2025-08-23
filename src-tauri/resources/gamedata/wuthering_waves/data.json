@@ -1,0 +1,85 @@
+{
+  "id": "wuthering_waves",
+  "version": 1,
+  "accent_color": "rgb(75,94,130)",
+  "accent_font_color": "rgb(215, 215, 215)",
+  "currencies": [
+    {
+      "id": "astrite",
+      "tracked": true,
+      "primary": true
+    },
+    {
+      "id": "lunite",
+      "tracked": true
+    },
+    {
+      "id": "premium_unit_pulls",
+      "tracked": true
+    },
+    {
+      "id": "premium_weapon_pulls",
+      "tracked": false
+    },
+    {
+      "id": "regular_unit_pulls",
+      "tracked": false
+    }
+  ],
+  "gacha": [
+    {
+      "id": "premium_unit_banner",
+      "pull_cost": [
+        {
+          "currency": "premium_unit_pulls",
+          "amount": 1
+        },
+        {
+          "currency": "astrite",
+          "amount": 160
+        }
+      ],
+      "rate": 0.006,
+      "fifty_fifty_system": true,
+      "target_rate": 0.5,
+      "hard_pity": 80,
+      "soft_pity": 70
+    },
+    {
+      "id": "weapon_banner",
+      "pull_cost": [
+        {
+          "currency": "premium_weapon_pulls",
+          "amount": 1
+        },
+        {
+          "currency": "astrite",
+          "amount": 160
+        }
+      ],
+      "rate": 0.006,
+      "fifty_fifty_system": false,
+      "target_rate": 1,
+      "hard_pity": 80,
+      "soft_pity": 70
+    }
+  ],
+  "regions": [
+    {
+      "id": "America",
+      "reset_time": "4:00:00 -05:00"
+    }
+  ],
+  "weekly_reset_day": "Monday",
+  "daily": [
+    {
+      "id": "daily_tasks",
+      "rewards": [
+        {
+          "currency": "astrite",
+          "amount": 60
+        }
+      ]
+    }
+  ]
+}

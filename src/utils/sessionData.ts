@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { RegionData, gameData, CurrencyValue, TrackedTask, GameTrackerConfig } from './gameData';
+import { RegionData, gameData, CurrencyValue, TrackedTask, MainTrackerConfig } from './gameData';
 import { TaskRecord, HistoryRecord, CurrencyHistory, RankedTaskRecord } from './db.utils';
 import { dateNumberToDate, getCurrentDateForGame, getCurrentDateNumberForGame, getDateNumberWithOffset } from './date.utils';
 import { findCurrencyRecord, sumCurrenciesforSteppedRewards } from './helpers.utils';
@@ -77,7 +77,6 @@ export class GameSession {
 
     for (let i = date_start; i <= date_end; i = getDateNumberWithOffset(i, 1)) {
       if (this.cachedDays[i] == null) {
-        console.log(this.gameName, i)
         this.cachedDays[i] = new DayData(this.gameName);
         needsPopulate = true;
       }
@@ -117,7 +116,7 @@ export class GameSession {
 
   }
 
-  private async fillRankedStageRecord(config: GameTrackerConfig, date_start: number, date_end: number) {
+  private async fillRankedStageRecord(config: MainTrackerConfig, date_start: number, date_end: number) {
     let tasksArr = [config.daily, config.weekly, config.periodic];
     let typeArr = ['daily', 'weekly', 'periodic'];
     for (let i = 0; i < tasksArr.length; i++) {
@@ -375,7 +374,7 @@ export class GameSession {
   getTotalGachaPulls() {
     const res: { name: string; amount: number; }[] = [];
 
-    gameData[this.gameName].config.gacha.forEach((banner) => {
+    gameData[this.gameName].config.gacha?.forEach((banner) => {
       let currentBanner = { name: banner.id, amount: 0 };
       res.push(currentBanner);
       banner.pull_cost?.forEach(cost => {
@@ -390,7 +389,7 @@ export class GameSession {
   getTotalGachaWins(options: { [key: string]: number }) {
     const res: { name: string; amount: number; }[] = [];
 
-    gameData[this.gameName].config.gacha.forEach((banner) => {
+    gameData[this.gameName].config.gacha?.forEach((banner) => {
       let currentBanner = { name: banner.id, amount: 0 };
       res.push(currentBanner);
       banner.pull_cost?.forEach(cost => {
@@ -422,6 +421,10 @@ export class TrackedProgressData extends SessionRecord {
   rankedStageValues: { [key: string]: number } = {};
 }
 
+export class TrackedEventProgressData extends TrackedProgressData {
+  hasMatchingConfig : boolean = false;
+}
+
 export class PremiumEntry extends SessionRecord {
   id: number = 0;
   name: string = "";
@@ -433,7 +436,7 @@ export class DayData {
   dailyProgress: { [key: string | number]: TrackedProgressData; } = {};
   weeklyProgress: { [key: string | number]: TrackedProgressData; } = {};
   periodicProgress: { [key: string | number]: TrackedProgressData; } = {};
-  eventProgress: { [key: string | number]: TrackedProgressData; } = {};
+  eventProgress: { [key: string | number]: TrackedEventProgressData; } = {};
   premiumSources: PremiumEntry[] = [];
   otherSources: { [key: string | number]: SessionRecord; } = {};
   totals: { initial: CurrencyValue[], calculated: CurrencyHistory[], override: CurrencyValue[] } = { initial: [], calculated: [], override: [] };
@@ -485,7 +488,7 @@ export class DayData {
         return this.periodicProgress[taskId] ? this.periodicProgress[taskId].rankedStageValues : null;
       case 'event':
         if (this.eventProgress[taskId] == null) return null;
-        return this.eventProgress[taskId] ? this.periodicProgress[taskId].rankedStageValues : null;
+        return this.eventProgress[taskId] ? this.eventProgress[taskId].rankedStageValues : null;
     }
     return null;
   }
@@ -519,6 +522,34 @@ export class DayData {
     progressType[name].currencies = currencies;
 
     this.populated = true;
+    this.calculateGainFromTasks();
+  }
+
+  deleteProgress(taskType: string, name: string) {
+    let progressType;
+    switch (taskType) {
+      case 'daily':
+        progressType = this.dailyProgress;
+        break;
+      case 'weekly':
+        progressType = this.weeklyProgress;
+        break;
+      case 'periodic':
+        progressType = this.periodicProgress;
+        break;
+      case 'event':
+        progressType = this.eventProgress;
+        break;
+      case 'other':
+        delete this.otherSources[name];
+        this.calculateGainFromTasks();
+        return;
+      default:
+        return;
+    }
+
+    delete progressType[name];
+
     this.calculateGainFromTasks();
   }
 
@@ -614,7 +645,6 @@ export class DayData {
 
 
   getCurrencyValue(currency: string) {
-    console.log(this.totals)
     let r = this.totals.override.find(x => x.currency == currency);
     if (r) return r.amount;
 
@@ -670,6 +700,10 @@ export class DayData {
 
   hasOverride() {
     return this.totals.override?.length > 0;
+  }
+
+  clearOverride(){
+    return this.totals.override = [];
   }
 }
 

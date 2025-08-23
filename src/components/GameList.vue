@@ -5,8 +5,6 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import Countdown from './Countdown.vue';
 import { getNextDailyResetTime } from '../utils/date.utils';
 
-
-
 </script>
 
 <template>
@@ -18,6 +16,7 @@ import { getNextDailyResetTime } from '../utils/date.utils';
                     gameData[game.name].config.name_key
                     : 'game_title'}`) }}</p>
                 <Countdown class="list-timer" :date="getNextDailyResetTime(game.name)" :onZero="()=>getNextDailyResetTime(game.name)"></Countdown>
+                <div class="pull-count">{{ sessionData.cachedGameSession[game.name]?.getTotalGachaPulls()[0].amount.toFixed(1) }} pulls</div>
             </div>
         </li>
     </ul>
@@ -26,7 +25,7 @@ import { getNextDailyResetTime } from '../utils/date.utils';
 <style lang="css" scoped>
 .game-list-parent {
     background-color: var(--background-color-secondary);
-    width: 15em;
+    width: 16em;
     flex-shrink: 0;
 
     li {
@@ -54,6 +53,10 @@ import { getNextDailyResetTime } from '../utils/date.utils';
 }
 
 .list-timer {
+    font-size: 0.75em;
+}
+
+.pull-count {
     font-size: 0.75em;
 }
 </style>
