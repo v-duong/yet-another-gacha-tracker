@@ -2,8 +2,9 @@ import { readDir, exists, readTextFile, mkdir } from '@tauri-apps/plugin-fs';
 import { appConfigDir, resolveResource } from '@tauri-apps/api/path';
 import { reactive } from 'vue';
 import { TrackerDatabase, loadDB } from './db.utils';
-import { sessionData } from './sessionData';
+import { GameSession, sessionData } from './sessionData';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { getCurrentDateNumberForGame } from './date.utils';
 
 export interface GameConfig {
   order?: number;
@@ -151,10 +152,16 @@ export async function generateGameList() {
         path: convertFileSrc(`${game.imagesPath}/${c.id}.png`)
       }
     })
+
+    if (sessionData.cachedGameSession[gameName] == null) {
+        const regionData = game.config.regions[0];
+        let date = getCurrentDateNumberForGame(regionData.reset_time);
+        sessionData.cachedGameSession[gameName] = new GameSession(gameName, date, regionData);
+    }
+
   }
   tempList = tempList.sort((a, b) => a.name.localeCompare(b.name));
   gameList.list = tempList.sort((a, b) => { return a.order - b.order });
-  //console.log(gameList.list);
 }
 
 export async function initializeData() {

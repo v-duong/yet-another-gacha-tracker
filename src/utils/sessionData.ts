@@ -1,8 +1,9 @@
 import { reactive } from 'vue';
 import { RegionData, gameData, CurrencyValue, TrackedTask, MainTrackerConfig } from './gameData';
 import { TaskRecord, HistoryRecord, CurrencyHistory, RankedTaskRecord } from './db.utils';
-import { dateNumberToDate, getCurrentDateForGame, getCurrentDateNumberForGame, getDateNumberWithOffset } from './date.utils';
+import { dateNumberToDate, getCurrentDateForGame, getCurrentDateNumberForGame, getDateNumberWithOffset, getLastWeeklyResetDateNumber } from './date.utils';
 import { findCurrencyRecord, sumCurrenciesforSteppedRewards } from './helpers.utils';
+import { da } from 'date-fns/locale';
 
 export type SessionCache = {
   cachedGameSession: { [key: string | number]: GameSession; };
@@ -274,6 +275,7 @@ export class GameSession {
 
   async adjustSteppedRewardsValuesRetroactive(data: TrackedTask, date: number, date_end: number, taskType: string, value: number) {
     let records = [];
+
     for (let i = date; i <= date_end; i = getDateNumberWithOffset(i, 1)) {
       if (this.cachedDays[i] == null)
         await this.populateSessionData(i);
@@ -370,6 +372,66 @@ export class GameSession {
     return [labels, data];
   }
 
+  async getWeeklyCurrencyGainsForRange(currency: string, date_start: number, weeks: number) {
+    let weeklyReset = getLastWeeklyResetDateNumber(this.gameName, date_start);
+    let firstDate = getDateNumberWithOffset(weeklyReset, -weeks * 7);
+    await this.populateSessionDateRange(firstDate, date_start);
+    const data = [];
+    const labels = [];
+
+    let currentWeekStart = firstDate;
+
+    for (let j = 0; j < weeks; j++) {
+      let currentWeekEnd = getDateNumberWithOffset(currentWeekStart, 7);
+      labels.push(dateNumberToDate(currentWeekStart).toISOString().slice(0, 10));
+
+      let currentSet = { daily: 0, weekly: 0, event: 0, periodic: 0, premium: 0 };
+      data.push(currentSet);
+
+      for (let i = currentWeekStart; i < currentWeekEnd; i = getDateNumberWithOffset(i, 1)) {
+        if (!this.cachedDays[i].populated) {
+          continue;
+        }
+
+        for (const key in this.cachedDays[i].dailyProgress) {
+          let record = findCurrencyRecord(this.cachedDays[i].dailyProgress[key].currencies, currency);
+          if (record)
+            currentSet.daily += record.amount;
+        }
+
+        for (const key in this.cachedDays[i].weeklyProgress) {
+          let record = findCurrencyRecord(this.cachedDays[i].weeklyProgress[key].currencies, currency);
+          if (record)
+            currentSet.weekly += record.amount;
+        }
+
+        for (const key in this.cachedDays[i].periodicProgress) {
+          let record = findCurrencyRecord(this.cachedDays[i].periodicProgress[key].currencies, currency);
+          if (record)
+            currentSet.periodic += record.amount;
+        }
+
+        for (const key in this.cachedDays[i].eventProgress) {
+          let record = findCurrencyRecord(this.cachedDays[i].eventProgress[key].currencies, currency);
+          if (record)
+            currentSet.event += record.amount;
+        }
+
+        for (const key in this.cachedDays[i].premiumSources) {
+          let record = findCurrencyRecord(this.cachedDays[i].premiumSources[key].currencies, currency);
+          if (record)
+            currentSet.premium += record.amount;
+        }
+
+      }
+
+      currentWeekStart = currentWeekEnd;
+
+    }
+
+    return [labels, data];
+  }
+
 
   getTotalGachaPulls() {
     const res: { name: string; amount: number; }[] = [];
@@ -422,7 +484,7 @@ export class TrackedProgressData extends SessionRecord {
 }
 
 export class TrackedEventProgressData extends TrackedProgressData {
-  hasMatchingConfig : boolean = false;
+  hasMatchingConfig: boolean = false;
 }
 
 export class PremiumEntry extends SessionRecord {
@@ -702,7 +764,7 @@ export class DayData {
     return this.totals.override?.length > 0;
   }
 
-  clearOverride(){
+  clearOverride() {
     return this.totals.override = [];
   }
 }

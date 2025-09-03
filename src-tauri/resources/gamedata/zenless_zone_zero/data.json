@@ -428,6 +428,67 @@
           }
         ]
       }
+    },
+    {
+      "id": "deadly_assault",
+      "reset_day": "2025-08-22",
+      "reset_period": 14,
+      "stepped_rewards": [
+        {
+          "step": 1,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 50
+            }
+          ]
+        },
+        {
+          "step": 2,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 50
+            }
+          ]
+        },
+        {
+          "step": 3,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 50
+            }
+          ]
+        },
+        {
+          "step": 4,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 50
+            }
+          ]
+        },
+        {
+          "step": 5,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 50
+            }
+          ]
+        },
+        {
+          "step": 6,
+          "currencies": [
+            {
+              "currency": "polychrome",
+              "amount": 50
+            }
+          ]
+        }
+      ]
     }
   ]
 }

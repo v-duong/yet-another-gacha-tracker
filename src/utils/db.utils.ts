@@ -70,12 +70,15 @@ export class TrackerDatabase {
     }
 
     async insertTaskRecord(taskType: string, date: number, region: string, taskId: string, value: number | boolean, currencies: CurrencyValue[], notes: string) {
+        taskId = escape_single_quote(taskId);
+        console.log (taskId);
+
         const existingRecord = await this.getTaskRecord(taskType, date, region, taskId);
 
         if (existingRecord == null) {
             if (value == 0 && notes == '' && isEmptyCurrencyArray(currencies)) return;
 
-            await this.db.execute(
+            let res = await this.db.execute(
                 `INSERT into ${taskType}(date, region, name, value, currencies, notes) VALUES($1, $2, $3, $4, $5, $6)`,
                 [date, region, taskId, value, currencies, notes],
             )
@@ -102,6 +105,9 @@ export class TrackerDatabase {
 
     async updateTaskRecordsForRange(dates: number[], targets: { [key: number]: DayData }, region: string, taskType: string, taskId: string) {
         let skipUpdate: number[] = [];
+
+        let escapedTaskId = escape_single_quote(taskId);
+
         dates.forEach(d => {
             const target = targets[d];
             const memberName = taskTypeToProgressName(taskType);
@@ -114,14 +120,14 @@ export class TrackerDatabase {
             }
 
             this.db.execute(
-                `UPDATE ${taskType} SET  value=$1, currencies=$2 WHERE date=${d} AND region='${region}' AND name='${taskId}'`,
+                `UPDATE ${taskType} SET  value=$1, currencies=$2 WHERE date=${d} AND region='${region}' AND name='${escapedTaskId}'`,
                 [target[memberName][taskId].value, target[memberName][taskId].currencies],
             )
         })
 
         skipUpdate.forEach(d => {
             this.db.execute(
-                `DELETE FROM ${taskType} WHERE date=${d} AND region='${region}' AND name='${taskId}'`
+                `DELETE FROM ${taskType} WHERE date=${d} AND region='${region}' AND name='${escapedTaskId}'`
             )
         })
     }
@@ -163,6 +169,8 @@ export class TrackerDatabase {
 
     async insertCurrencyHistory(date: number, region: string, currencies: CurrencyHistory[], override: CurrencyValue[], notes: string) {
         const existingRecord = await this.getCurrencyHistory(date, region);
+
+        notes = escape_single_quote(notes);
 
         if (existingRecord == null)
             await this.db.execute(
@@ -285,6 +293,9 @@ export class TrackerDatabase {
 
     async insertPremiumRecord(date: number, region: string, id: number, name: string, category: string, spending: number, currencies: CurrencyValue[], notes: string = "") {
         const existingRecord = await this.getPremiumRecord(date, region, id, name, category);
+
+        name = escape_single_quote(name);
+        notes = escape_single_quote(notes);
 
         if (existingRecord == null)
             await this.db.execute(
@@ -415,4 +426,34 @@ async function initalizeDB(db: Database) {
     createHistoryTable(db, "currencyHistory");
 
     createUserDataTable(db, "userData");
+}
+
+function escape_single_quote (str:string) {
+    if (typeof str != 'string')
+        return str;
+
+    return str.replace(/'/g, function (char) {
+        switch (char) {
+            case "'":
+                return "'"+char;
+                            
+            default:
+                return char;
+        }
+    });
+}
+
+function unescape_single_quote (str:string) {
+    if (typeof str != 'string')
+        return str;
+
+    return str.replace(/''/g, function (s) {
+        switch (s) {
+            case "''":
+                return "'";
+                            
+            default:
+                return s;
+        }
+    });
 }

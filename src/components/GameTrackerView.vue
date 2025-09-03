@@ -6,12 +6,14 @@ import { updateGameView } from '../utils/helpers.utils';
 import TaskBox from './TaskBox.vue';
 import SessionSummaryBar from './SessionSummaryBar.vue';
 import DayNav from './DayNav.vue';
-import LineChart from './LineChart.vue';
+import LineChart from './charts/LineChart.vue';
 import PremiumItemBox from './PremiumItemBox.vue';
 import GameSummaryPanel from './GameSummaryPanel.vue';
 import EventTaskBox from './EventTaskBox.vue';
+import BarChart from './charts/BarChart.vue';
 
 const currentContext = ref({ gameName: "", config: {}, sessionData: {}, date: "" })
+const currentChart = ref('line');
 
 await updateCurrent();
 
@@ -28,8 +30,6 @@ async function updateCurrent() {
     c.date = c.sessionData.lastSelectedDay;
 }
 
-
-
 </script>
 
 <template>
@@ -41,9 +41,16 @@ async function updateCurrent() {
             </DayNav>
         </div>
         <div class="info-panel-parent flex-row">
-            <GameSummaryPanel class="game-summary-parent" :context="currentContext"/>
-            <div class="chart-parent">
-                <LineChart :context="currentContext" :currency="getPrimaryCurrency(currentContext.gameName)"></LineChart>
+            <GameSummaryPanel class="game-summary-parent" :context="currentContext" />
+            <div class="chart-panel-container flex-column">
+                <div class="chart-tabs-parent flex-row">
+                    <div class="chart-tab" :class="{active: currentChart == 'line'}" @click="currentChart = 'line'">Line</div>
+                    <div class="chart-tab" :class="{active: currentChart == 'bar'}"  @click="currentChart = 'bar'">Bar</div>
+                </div>
+                <div class="chart-parent">
+                    <LineChart :context="currentContext" :currency="getPrimaryCurrency(currentContext.gameName)" v-if="currentChart=='line'" />
+                    <BarChart  :context="currentContext" :currency="getPrimaryCurrency(currentContext.gameName)" v-if="currentChart=='bar'" />
+                </div>
             </div>
         </div>
         <div class="task-container">
@@ -54,8 +61,8 @@ async function updateCurrent() {
             <PremiumItemBox id="premium-items" :name="'premium'" :context="currentContext" />
             <TaskBox v-if="currentContext.config?.periodic != null" id="periodic-tasks" :name="'periodic'"
                 :context="currentContext" :data="currentContext.config?.periodic" />
-            <EventTaskBox id="event-tasks" :name="'event'"
-                :context="currentContext" :data="currentContext.config?.event" :userData="currentContext.customEventConfig" />
+            <EventTaskBox id="event-tasks" :name="'event'" :context="currentContext"
+                :data="currentContext.config?.event" :userData="currentContext.customEventConfig" />
         </div>
         <SessionSummaryBar :context="currentContext" />
     </div>
@@ -65,7 +72,7 @@ async function updateCurrent() {
 <style lang="css" scoped>
 .info-panel-parent {
     position: relative;
-    gap:1em;
+    gap: 1em;
     padding: 1em;
 }
 
@@ -75,13 +82,32 @@ async function updateCurrent() {
     border-radius: 0.2em;
 }
 
-.chart-parent {
-    height: 16em;
-    padding: 1em;
+.chart-panel-container {
+    position: relative;
     width: calc(100% - 15em - 4em);
+}
+
+.chart-parent {
+    height: 17em;
+    padding: 1em;
     position: relative;
     background-color: var(--background-color-tertiary);
-    border-radius: 0.2em;
+    border-radius: 0 0.2em 0.2em 0.2em;
+}
+
+.chart-tab {
+    background-color: var(--background-color-secondary);
+    padding: 0.5em 1em;
+    border-radius: 0.4em 0.4em 0 0;
+
+    &.active {
+        background-color: var(--background-color-tertiary);
+        border-bottom: 1px solid  var(--accent-color);;
+    }
+
+    &:hover {
+        background-color: var(--accent-color);
+    }
 }
 
 .main-view-container {

@@ -10,6 +10,7 @@ export function taskTypeToProgressName(taskType: string) {
 }
 
 export function findCurrencyRecord(source: CurrencyHistory[] | CurrencyValue[], target: string) {
+    if (!source) return null;
     return source.find(x => x.currency == target);
 }
 
@@ -238,11 +239,6 @@ export function debounce(name: string, func: CallableFunction, wait: number = 50
 
 export async function updateGameView(gameName: string) {
     let config = gameData[gameName].config;
-    if (sessionData.cachedGameSession[gameName] == null) {
-        const regionData = config.regions[0];
-        let date = getCurrentDateNumberForGame(regionData.reset_time);
-        sessionData.cachedGameSession[gameName] = new GameSession(gameName, date, regionData);
-    }
 
     let date = sessionData.cachedGameSession[gameName].lastSelectedDay;
 

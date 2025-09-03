@@ -1,7 +1,7 @@
 <script setup>
 import { Line } from 'vue-chartjs';
 import { ref, watch } from 'vue';
-import { getCurrentDateNumberForGame, getDateNumberWithOffset } from '../utils/date.utils';
+import { getCurrentDateNumberForGame, getDateNumberWithOffset } from '../../utils/date.utils';
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, PointElement, LineElement, Filler } from 'chart.js'
 import { _addGrace, color } from 'chart.js/helpers';
 
