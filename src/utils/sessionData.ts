@@ -1,9 +1,10 @@
 import { reactive } from 'vue';
 import { RegionData, gameData, CurrencyValue, TrackedTask, MainTrackerConfig } from './gameData';
 import { TaskRecord, HistoryRecord, CurrencyHistory, RankedTaskRecord } from './db.utils';
-import { dateNumberToDate, getCurrentDateForGame, getCurrentDateNumberForGame, getDateNumberWithOffset, getLastWeeklyResetDateNumber } from './date.utils';
+import { dateNumberToDate, dateToDateNumber, getCurrentDateForGame, getCurrentDateNumberForGame, getDateNumberWithOffset, getLastWeeklyResetDateNumber } from './date.utils';
 import { findCurrencyRecord, sumCurrenciesforSteppedRewards } from './helpers.utils';
 import { da } from 'date-fns/locale';
+import { lastDayOfMonth, setDate, subMonths } from 'date-fns';
 
 export type SessionCache = {
   cachedGameSession: { [key: string | number]: GameSession; };
@@ -430,6 +431,51 @@ export class GameSession {
     }
 
     return [labels, data];
+  }
+
+  async getMonthlyCurrencyGainsForRange(currency: string, date_start: number, months: number) {
+    let endDate = dateToDateNumber(lastDayOfMonth(dateNumberToDate(date_start)));
+    let startDate = dateToDateNumber(subMonths(setDate(endDate, 1), months));
+    await this.populateSessionDateRange(startDate, endDate);
+    const data = { daily: 0, weekly: 0, event: 0, periodic: 0, premium: 0 };
+
+    for (let i = startDate; i <= endDate; i = getDateNumberWithOffset(i, 1)) {
+      if (!this.cachedDays[i].populated) {
+        continue;
+      }
+
+      for (const key in this.cachedDays[i].dailyProgress) {
+        let record = findCurrencyRecord(this.cachedDays[i].dailyProgress[key].currencies, currency);
+        if (record)
+          data.daily += record.amount;
+      }
+
+      for (const key in this.cachedDays[i].weeklyProgress) {
+        let record = findCurrencyRecord(this.cachedDays[i].weeklyProgress[key].currencies, currency);
+        if (record)
+          data.weekly += record.amount;
+      }
+
+      for (const key in this.cachedDays[i].periodicProgress) {
+        let record = findCurrencyRecord(this.cachedDays[i].periodicProgress[key].currencies, currency);
+        if (record)
+          data.periodic += record.amount;
+      }
+
+      for (const key in this.cachedDays[i].eventProgress) {
+        let record = findCurrencyRecord(this.cachedDays[i].eventProgress[key].currencies, currency);
+        if (record)
+          data.event += record.amount;
+      }
+
+      for (const key in this.cachedDays[i].premiumSources) {
+        let record = findCurrencyRecord(this.cachedDays[i].premiumSources[key].currencies, currency);
+        if (record)
+          data.premium += record.amount;
+      }
+    }
+
+    return data;
   }
 
 

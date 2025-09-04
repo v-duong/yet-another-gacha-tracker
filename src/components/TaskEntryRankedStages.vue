@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, watchEffect } from 'vue';
 import { appendGameToString, getCurrencyImage, imageExists } from '../utils/gameData';
 import { handleRankedStageRecordChange } from '../utils/helpers.utils';
 import { getLastPeriodicResetDateNumber, getLastWeeklyResetDateNumber, getNextPeriodicResetTime } from "../utils/date.utils";
@@ -17,7 +17,7 @@ props.data.stepped_rewards?.forEach((entry) => {
     if (entry.step > maxSteps) maxSteps = entry.step;
 });
 
-watch(() => [props.context.date, props.context.sessionData], () => {
+watchEffect(() => {
     let rankedProgressObj = props.context.sessionData.cachedDays[props.context.date]?.getRankedProgress(props.taskType, props.data.id);
     let resetDay = 0;
 
@@ -53,7 +53,7 @@ watch(() => [props.context.date, props.context.sessionData], () => {
     for (const key in rankedProgressObj) {
         lastRecords.value[key].current = rankedProgressObj[key];
     }
-}, { immediate: true, deep: 4 })
+})
 
 function getTotalFromStepped(stepped_rewards_array) {
     let resObj = {};

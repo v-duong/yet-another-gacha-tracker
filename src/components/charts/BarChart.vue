@@ -1,6 +1,6 @@
 <script setup>
 import { Bar } from 'vue-chartjs';
-import { ref, watch } from 'vue';
+import { ref, watch, watchEffect } from 'vue';
 import { getCurrentDateNumberForGame, getDateNumberWithOffset } from '../../utils/date.utils';
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, PointElement, LineElement, Filler } from 'chart.js'
 import { _addGrace } from 'chart.js/helpers';
@@ -33,7 +33,7 @@ let config = {
     }
 }
 
-watch(() => props.context.sessionData.cachedDays, async () => {
+watchEffect(async () => {
     let currentDate = getCurrentDateNumberForGame(props.context.sessionData.lastSelectedRegion.reset_time);
     let res = await props.context.sessionData.getWeeklyCurrencyGainsForRange(props.currency, currentDate, 5);
 
@@ -75,7 +75,7 @@ watch(() => props.context.sessionData.cachedDays, async () => {
         ]
 
     }
-}, { immediate: "yes", deep: 5 });
+});
 
 </script>
 

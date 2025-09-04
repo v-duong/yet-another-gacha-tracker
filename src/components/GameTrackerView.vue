@@ -11,6 +11,7 @@ import PremiumItemBox from './PremiumItemBox.vue';
 import GameSummaryPanel from './GameSummaryPanel.vue';
 import EventTaskBox from './EventTaskBox.vue';
 import BarChart from './charts/BarChart.vue';
+import PieChart from './charts/PieChart.vue';
 
 const currentContext = ref({ gameName: "", config: {}, sessionData: {}, date: "" })
 const currentChart = ref('line');
@@ -46,10 +47,12 @@ async function updateCurrent() {
                 <div class="chart-tabs-parent flex-row">
                     <div class="chart-tab" :class="{active: currentChart == 'line'}" @click="currentChart = 'line'">Line</div>
                     <div class="chart-tab" :class="{active: currentChart == 'bar'}"  @click="currentChart = 'bar'">Bar</div>
+                    <div class="chart-tab" :class="{active: currentChart == 'pie'}"  @click="currentChart = 'pie'">Pie</div>
                 </div>
                 <div class="chart-parent">
                     <LineChart :context="currentContext" :currency="getPrimaryCurrency(currentContext.gameName)" v-if="currentChart=='line'" />
                     <BarChart  :context="currentContext" :currency="getPrimaryCurrency(currentContext.gameName)" v-if="currentChart=='bar'" />
+                    <PieChart  :context="currentContext" :currency="getPrimaryCurrency(currentContext.gameName)" v-if="currentChart=='pie'" />
                 </div>
             </div>
         </div>

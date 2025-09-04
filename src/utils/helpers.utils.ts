@@ -154,16 +154,24 @@ export async function handleRankedStageRecordChange(gameName: string, taskType: 
 export async function updatePremiumRecord(gameName: string, date: number, record: PremiumEntry) {
     const session = sessionData.cachedGameSession[gameName];
 
+    let recordsToUpdate = await session.adjustCurrentHistoryRetroactive(date);
+
     debounce(record.id.toString(), () => {
         gameData[gameName].db.insertPremiumRecord(date, session.lastSelectedRegion.id, record.id, record.name, record.category, record.spending, record.currencies, record.notes);
+        gameData[gameName].db.insertCurrencyHistory(date, session.lastSelectedRegion.id, session.cachedDays[date].totals.calculated, session.cachedDays[date].totals.override, "");
+        gameData[gameName].db.updateCurrencyHistoryForRange(recordsToUpdate, session.cachedDays, session.lastSelectedRegion.id);
     });
 }
 
 export async function removePremiumRecord(gameName: string, date: number, record: PremiumEntry) {
     const session = sessionData.cachedGameSession[gameName];
 
+    let recordsToUpdate = await session.adjustCurrentHistoryRetroactive(date);
+
     debounce(record.id.toString(), () => {
         gameData[gameName].db.deletePremiumRecord(date, session.lastSelectedRegion.id, record.id, record.name, record.category);
+        gameData[gameName].db.insertCurrencyHistory(date, session.lastSelectedRegion.id, session.cachedDays[date].totals.calculated, session.cachedDays[date].totals.override, "");
+        gameData[gameName].db.updateCurrencyHistoryForRange(recordsToUpdate, session.cachedDays, session.lastSelectedRegion.id);
     });
 }
 

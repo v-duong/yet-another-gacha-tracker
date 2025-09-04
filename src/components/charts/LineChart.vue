@@ -1,6 +1,6 @@
 <script setup>
 import { Line } from 'vue-chartjs';
-import { ref, watch } from 'vue';
+import { ref, watch, watchEffect } from 'vue';
 import { getCurrentDateNumberForGame, getDateNumberWithOffset } from '../../utils/date.utils';
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, PointElement, LineElement, Filler } from 'chart.js'
 import { _addGrace, color } from 'chart.js/helpers';
@@ -53,7 +53,7 @@ function getGradient(ctx, chartArea) {
     return gradient;
 }
 
-watch(() => props.context.sessionData.cachedDays, async () => {
+watchEffect(async () => {
     let currentDate = getCurrentDateNumberForGame(props.context.sessionData.lastSelectedRegion.reset_time);
     let startDate = getDateNumberWithOffset(currentDate, -30);
     let res = await props.context.sessionData.getCurrencyDataForRange(props.currency, startDate, currentDate)
@@ -80,7 +80,7 @@ watch(() => props.context.sessionData.cachedDays, async () => {
         }]
 
     }
-}, { immediate: "yes", deep: 5 });
+});
 
 </script>
 
